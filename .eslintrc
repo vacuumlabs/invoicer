@@ -1,0 +1,7 @@
+{
+  "extends": ["vacuumlabs"],
+
+  "env": {
+    "node": true
+  },
+}
