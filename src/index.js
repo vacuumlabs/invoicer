@@ -6,6 +6,7 @@ import logger from 'winston'
 import renderInvoice from './invoice'
 import {listenSlack} from './slack'
 import pdf from 'html-pdf'
+import r from './routes'
 
 logger.cli()
 logger.level = c.logLevel
@@ -52,7 +53,7 @@ function* actions(req, res) {
 function* invoice(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
-    const htmlInvoice = renderInvoice(exampleQuery)
+    const htmlInvoice = renderInvoice(req.query)
     pdf
       .create(htmlInvoice, {format: 'A4'})
       .toBuffer((err, buffer) => {
@@ -65,10 +66,6 @@ function* invoice(req, res) {
   })()
 }
 
-const r = {
-  actions: '/actions',
-  invoice: '/invoice/',
-}
 
 register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)

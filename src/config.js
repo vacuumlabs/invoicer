@@ -7,6 +7,7 @@ export default transenv()(({str, bool, num}) => {
     env,
     logLevel: str('log_level', isDevelopment ? 'debug' : 'error'),
     port: str('PORT'),
+    host: str('host'),
     invoicingChannel: str('invoicing_channel'),
     slack: {
       botToken: str('slack_bot_token'),
