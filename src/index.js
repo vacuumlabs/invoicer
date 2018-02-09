@@ -1,9 +1,10 @@
 import c from './config'
 import express from 'express'
 import bodyParser from 'body-parser'
-import {expressHelpers, run} from 'yacol'
+import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
 import renderInvoice from './invoice'
+import {listenSlack} from './slack'
 import pdf from 'html-pdf'
 
 logger.cli()
@@ -14,6 +15,8 @@ const app = express()
 app.use(bodyParser.urlencoded())
 
 const {register, runApp} = expressHelpers
+
+const slackEvents = createChannel()
 
 const exampleQuery = {
   invoiceNumber: 'VAC170007',
@@ -40,6 +43,12 @@ const exampleQuery = {
   selfInvoicing: 'true',
 }
 
+// eslint-disable-next-line require-yield
+function* actions(req, res) {
+  slackEvents.put({...JSON.parse(req.body.payload), type: 'action'})
+  res.status(200).send()
+}
+
 function* invoice(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
@@ -57,9 +66,11 @@ function* invoice(req, res) {
 }
 
 const r = {
+  actions: '/actions',
   invoice: '/invoice/',
 }
 
+register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)
 
 // eslint-disable-next-line require-await
@@ -68,6 +79,8 @@ register(app, 'get', r.invoice, invoice)
   app.listen(c.port, () =>
     logger.log('info', `App started on localhost:${c.port}.`)
   )
+
+  await listenSlack(c.slack.botToken, slackEvents)
 
 })().catch((e) => {
   logger.log('error', e)
