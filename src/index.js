@@ -29,6 +29,7 @@ const exampleQuery = {
   clientAddress: 'Brančská 7, 85105 Bratislava',
   clientID: '50509527',
   clientTaxID: '1080786630',
+  clientVAT: 'CZ2120112962',
   issueDate: '07.11.2017',
   paymentDate: '15.11.2017',
   serviceName: 'Prenájom pracovného priestoru za júl 2017',
