@@ -7,6 +7,7 @@ const columns = [
   'preTaxCost', 'VATLevel', 'VAT', 'fullCost', 'selfInvoicing',
 ]
 
+// TODO: Parse float values + handle special case of authors.
 export function csv2invoices(csv) {
   return parse(csv, {columns})
 }

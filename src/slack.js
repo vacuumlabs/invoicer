@@ -60,7 +60,7 @@ async function listenUser(stream, user) {
     if (event.subtype === 'file_share') {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
-      const invoices = csv2invoices(csv)
+      const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
       await apiCall(apiState, 'chat.postMessage', {
         channel: c.invoicingChannel,
         as_user: true,
