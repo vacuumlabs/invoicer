@@ -1,4 +1,7 @@
-import mustache from 'mustache'
+import handlebars from 'handlebars'
+import handlebarsIntl from 'handlebars-intl'
+
+handlebarsIntl.registerWith(handlebars)
 
 const template = `
 <html>
@@ -31,7 +34,7 @@ const template = `
 		}
 
 		#services {
-			padding-left: 12px;
+			padding: 6px 0px 6px 12px;
 			border-bottom: 1px solid black;
 		}
 
@@ -90,20 +93,33 @@ const template = `
 			padding-left: 0.5em;
 		}
 
+    th, td {
+      text-align: right;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    tfoot {
+      border-top: 2px solid black;
+      font-weight: bold;
+    }
+
   </style>
   <body>
-    <h1>Faktúra {{invoiceNumber}}</h1>
+    <h1>Faktúra {{invoicePrefix}}{{invoiceNumber}}</h1>
     <div id="main">
       <div>
         <h2>Dodávateľ</h2>
 				{{vendorName}}<br />
 				{{vendorAddress}}
 				<dl>
-					{{#vendorID}}<dt>IČO:</dt><dd>{{vendorID}}</dd>{{/vendorID}}
-					{{#vendorTaxID}}<dt>DIČ:</dt><dd>{{vendorTaxID}}</dd>{{/vendorTaxID}}
-					{{#vendorVAT}}<dt>IČ DPH:</dt><dd>{{vendorVAT}}</dd>{{/vendorVAT}}
-					{{#vendorIBAN}}<dt>IBAN:</dt><dd>{{vendorIBAN}}</dd>{{/vendorIBAN}}
-					{{#vendorBIC}}<dt>BIC:</dt><dd>{{vendorBIC}}</dd>{{/vendorBIC}}
+					{{#if vendorID}}<dt>IČO:</dt><dd>{{vendorID}}</dd>{{/if}}
+					{{#if vendorTaxID}}<dt>DIČ:</dt><dd>{{vendorTaxID}}</dd>{{/if}}
+					{{#if vendorVAT}}<dt>IČ DPH:</dt><dd>{{vendorVAT}}</dd>{{/if}}
+					{{#if vendorIBAN}}<dt>IBAN:</dt><dd>{{vendorIBAN}}</dd>{{/if}}
+					{{#if vendorBIC}}<dt>BIC:</dt><dd>{{vendorBIC}}</dd>{{/if}}
 				</dl>
 				
       </div>
@@ -112,26 +128,37 @@ const template = `
 				{{clientName}}<br />
 				{{clientAddress}}
 				<dl>
-					{{#clientID}}<dt>IČO:</dt><dd>{{clientID}}</dd>{{/clientID}}
-					{{#clientTaxID}}<dt>DIČ:</dt><dd>{{clientTaxID}}</dd>{{/clientTaxID}}
-					{{#clientVAT}}<dt>IČ DPH:</dt><dd>{{clientVAT}}</dd>{{/clientVAT}}
+					{{#if clientID}}<dt>IČO:</dt><dd>{{clientID}}</dd>{{/if}}
+					{{#if clientTaxID}}<dt>DIČ:</dt><dd>{{clientTaxID}}</dd>{{/if}}
+					{{#if clientVAT}}<dt>IČ DPH:</dt><dd>{{clientVAT}}</dd>{{/if}}
 				</dl>
       </div>
     </div>
 		<div id="payment-terms">
 			<dl>
-				<dt>Dátum vyhotovenia: </dt><dd>{{issueDate}}</dd>
-				<dt>Dátum splatnosti: </dt><dd>{{paymentDate}}</dd>
+				<dt>Dátum vyhotovenia: </dt><dd>{{formatDate issueDate day="numeric" month="long" year="numeric"}}</dd>
+				<dt>Dátum splatnosti: </dt><dd>{{formatDate paymentDate day="numeric" month="long" year="numeric"}}</dd>
 			</dl>
 		</div>
 		<div id="services">
 			<table>
 				<thead><tr>
-					<th>Fakturujeme vám</th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
+					<th style="text-align: left;">Fakturujeme vám</th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
 				</tr></thead>
-				<tbody><tr>
-					<td style="width:50%;">{{serviceName}}</td><td>{{preTaxCost}}</td><td>{{VATLevel}}</td><td>{{VAT}}</td><td>{{fullCost}}</td>
-				</tr>
+				<tbody>{{#services}}<tr>
+          <td style="width:50%;text-align: left;">{{name}}</td>
+          <td>{{formatNumber preTaxCost "EUR"}}</td>
+          <td>{{formatNumber VATLevel style="percent"}}</td>
+          <td>{{formatNumber VAT "EUR"}}</td>
+          <td>{{formatNumber fullCost "EUR"}}</td>
+        </tr>{{/services}}</tbody>
+        <tfoot><tr>
+          <td style="width:50%;text-align: left;">Celkom k úhrade (EUR)</td>
+          <td>{{formatNumber preTaxCostSum "EUR"}}</td>
+          <td></td>
+          <td>{{formatNumber VATSum "EUR"}}</td>
+          <td>{{formatNumber fullCostSum "EUR"}}</td>
+        </tr></tfoot>
 			</table>
 		</div>
 		<div id="notes">
@@ -142,6 +169,9 @@ const template = `
   </body>
 </html>
 `
-export default function invoice(data) {
-  return mustache.render(template, data)
+export default function invoice(context) {
+  return handlebars.compile(template)(context, {data: {intl: {
+    locales: 'sk-SK',
+    formats: {number: {EUR: {style: 'currency', currency: 'EUR'}}},
+  }}})
 }

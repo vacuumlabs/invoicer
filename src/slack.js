@@ -5,10 +5,12 @@ import {init, apiCall} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
-import r from './routes'
+import {routes as r, store} from './routes'
+
+const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
 const request = _request.defaults({headers: {
-  Authorization: `Bearer ${c.slack.botToken}`
+  Authorization: `Bearer ${c.slack.botToken}`,
 }})
 
 const streams = {}
@@ -39,17 +41,19 @@ function streamForUser(userId) {
 
 function formatInvoice(invoice) {
   const trimPad = (str, l) =>
-    (str.length > l ? str.substring(0, l - 3) + '...' : str).padEnd(l)
+    (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l)
+
 
   const [date, cost, user, client, vendor] = [
     invoice.issueDate.padEnd(10),
-    invoice.fullCost.padStart(8),
-    trimPad(invoice.user, 15),
+    currencyFormat.format(invoice.fullCostSum).padStart(9),
+    trimPad(invoice.user, 13),
     trimPad(invoice.clientName, 18),
     trimPad(invoice.vendorName, 18),
   ].map((f) => `\`${f}\``)
 
-  const url = `${c.host}${r.invoice}?${querystring.stringify(invoice)}`
+  const id = store(invoice)
+  const url = `${c.host}${r.invoice}?${querystring.stringify({id})}`
   return `${date} ${cost} ${user} ${client} ⇒ ${vendor} <${url}|📩>`
 }
 
@@ -68,7 +72,7 @@ async function listenUser(stream, user) {
         attachments: [{
           title: 'Invoices summary',
           text: invoices.map(formatInvoice).join('\n'),
-        }]
+        }],
       })
     }
   }
