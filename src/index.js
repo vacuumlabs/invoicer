@@ -91,7 +91,7 @@ function* invoice(req, res) {
 function* pohodaXML(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
-    const XML = renderXML({invoices:[exampleQuery]})//shortNames[req.query.id])
+    const XML = renderXML({invoices: [exampleQuery]})//shortNames[req.query.id])
     res.set({
       'Content-Disposition': 'attachment; filename="pohodaImport.xml"',
     })

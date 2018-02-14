@@ -7,6 +7,20 @@ handlebars.registerHelper('XMLDate', (context) =>
   new Date(context).toISOString().slice(0, 10)
 )
 
+handlebars.registerHelper('Address', (context) => {
+  let tokens = context.split(',')
+  const street = tokens.shift()
+  tokens = tokens[0]
+  tokens = tokens.trim()
+  tokens = tokens.split(' ')
+  const zip = tokens.shift()
+  const city = tokens.join(' ')
+  return new handlebars.SafeString(`<typ:city>${city}</typ:city>
+          <typ:street>${street}</typ:street>
+          <typ:zip>${zip}</typ:zip>
+         `)
+})
+
 const template = `
 <dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd" 
               xmlns:inv="http://www.stormware.cz/schema/version_2/invoice.xsd" 
@@ -45,9 +59,7 @@ const template = `
                             <typ:company>{{vendorName}}</typ:company>
                             <typ:division></typ:division>
                             <typ:name>{{vendorName}}</typ:name>
-                            <typ:city>{{vendorAddress}}</typ:city>
-                            <!--<typ:street>410 E Santa Clara Street</typ:street>-->
-                            <!--<typ:zip>95113</typ:zip>-->
+                            {{Address vendorAddress}}
                             {{#if vendorID}}<typ:ico>{{vendorID}}</typ:ico>{{/if}}
                             {{#if vendorTaxID}}<typ:dic>{{vendorTaxID}}</typ:dic>{{/if}}
                             {{#if vendorVAT}}<typ:icDph>{{vendorVAT}}</typ:icDph>{{/if}}
@@ -65,9 +77,7 @@ const template = `
                             <typ:company>{{clientName}}</typ:company>
                             <typ:division></typ:division>
                             <typ:name>{{clientName}}</typ:name>
-                            <typ:city>{{clientAddress}}</typ:city>
-                            <!--<typ:street></typ:street>-->
-                            <!--<typ:zip></typ:zip>-->
+                            {{Address clientAddress}}
                             {{#if clientID}}<typ:ico>{{clientID}}</typ:ico>{{/if}}
                             {{#if clientTaxID}}<typ:dic>{{clientTaxID}}</typ:dic>{{/if}}
                             {{#if clientVAT}}<typ:icDph>{{clientVAT}}</typ:icDph>{{/if}}
