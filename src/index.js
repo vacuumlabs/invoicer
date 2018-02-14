@@ -4,6 +4,7 @@ import bodyParser from 'body-parser'
 import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
 import renderInvoice from './invoice'
+import renderXML from './invoices2PohodaXML'
 import {listenSlack} from './slack'
 import pdf from 'html-pdf'
 import {routes as r, shortNames} from './routes'
@@ -37,6 +38,7 @@ const exampleQuery = {
   clientVAT: 'CZ2120112962',
   issueDate: Date.parse('2017-11-07'),
   paymentDate: Date.parse('2017-11-15'),
+  isReceived: '',
   services: [{
     name: 'Prenájom pracovného priestoru za júl 2017',
     preTaxCost: 41.67,
@@ -86,9 +88,21 @@ function* invoice(req, res) {
   })()
 }
 
+function* pohodaXML(req, res) {
+  // eslint-disable-next-line require-await
+  yield (async function() {
+    const XML = renderXML({invoices:[exampleQuery]})//shortNames[req.query.id])
+    res.set({
+      'Content-Disposition': 'attachment; filename="pohodaImport.xml"',
+    })
+    res.status(200).send(XML)
+  })()
+}
+
 
 register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)
+register(app, 'get', r.pohodaXML, pohodaXML)
 
 // eslint-disable-next-line require-await
 ;(async function() {
