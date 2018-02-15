@@ -31,6 +31,35 @@ export async function listenSlack(token, stream) {
   }
 }
 
+async function getChannelForUsername(username) {
+  const userList = await apiCall(apiState, 'users.list')
+  const user = userList.members.find((x) => x.profile.display_name === username)
+  if (user) {
+    const channel = await apiCall(apiState, 'im.open', {user: user.id})
+    return (channel.channel.id)
+  } else {
+    return undefined
+  }
+}
+
+async function sendInvoiceToUser(invoice) {
+  const channelId = await getChannelForUsername(invoice.slackId)
+  if (channelId) {
+    await apiCall(apiState, 'chat.postMessage', {
+      channel: channelId,
+      as_user: true,
+      text: 'I have received your invoice!',
+      attachments: [{
+        title: 'Invoice summary',
+        text: `${formatInvoice(invoice)}\n`,
+      }],
+    })
+    return true
+  } else {
+    return false
+  }
+}
+
 function streamForUser(userId) {
   if (streams[userId] == null) {
     streams[userId] = createChannel()
@@ -74,6 +103,16 @@ async function listenUser(stream, user) {
           text: invoices.map(formatInvoice).join('\n'),
         }],
       })
+      for (const i of invoices) {
+        const success = await sendInvoiceToUser(i)
+        if (i.slackId && !success) {
+          await apiCall(apiState, 'chat.postMessage', {
+            channel: c.invoicingChannel,
+            as_user: true,
+            text: `I didn't find user ${i.slackId}.`,
+          })
+        }
+      }
     }
   }
 }
