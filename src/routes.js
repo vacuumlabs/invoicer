@@ -9,4 +9,5 @@ export function store(value) {
 export const routes = {
   actions: '/actions',
   invoice: '/invoice/',
+  pohodaXML: '/pohodaXML/',
 }

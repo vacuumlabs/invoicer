@@ -4,7 +4,7 @@ const columns = [
   'user', 'slackId', 'invoicePrefix', 'invoiceNumber', 'vendorName',
   'vendorAddress', 'vendorID', 'vendorTaxID', 'vendorVAT', 'vendorVATPayer',
   'vendorIBAN', 'vendorBIC', 'clientName', 'clientAddress', 'clientID',
-  'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'selfInvoicing',
+  'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'isReceived',
 ]
 
 function finRound(n) {
