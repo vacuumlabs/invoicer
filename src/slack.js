@@ -1,10 +1,12 @@
 import c from './config'
 import {createChannel} from 'yacol'
 import logger from 'winston'
-import {init, apiCall} from './slackApi'
+import {init, apiCall, apiCallMultipart} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
+import renderInvoice from './invoice'
+import pdf from 'html-pdf'
 import {routes as r, store} from './routes'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
@@ -31,29 +33,39 @@ export async function listenSlack(token, stream) {
   }
 }
 
-async function getChannelForUsername(username) {
-  const userList = await apiCall(apiState, 'users.list')
-  const user = userList.members.find((x) => x.profile.display_name === username)
-  if (user) {
-    const channel = await apiCall(apiState, 'im.open', {user: user.id})
+async function getChannelForUserID(userID) {
+  const channel = await apiCall(apiState, 'im.open', {user: userID})
+  if (channel.ok) {
     return (channel.channel.id)
   } else {
     return undefined
   }
 }
 
-async function sendInvoiceToUser(invoice) {
-  const channelId = await getChannelForUsername(invoice.slackId)
-  if (channelId) {
-    await apiCall(apiState, 'chat.postMessage', {
-      channel: channelId,
-      as_user: true,
-      text: 'I have received your invoice!',
-      attachments: [{
-        title: 'Invoice summary',
-        text: `${formatInvoice(invoice)}\n`,
-      }],
+async function sendPdf(htmlInvoice, channelId) {
+  pdf
+    .create(htmlInvoice, {format: 'A4'})
+    .toBuffer(async (err, buffer) => {
+      if (err) logger.warn('PDF conversion failed')
+
+      await apiCallMultipart(apiState, 'files.upload',
+        {
+          filename: 'invoice.pdf',
+          channel: channelId,
+          file: buffer,
+
+
+        }
+
+      )
     })
+}
+
+async function sendInvoiceToUser(invoice) {
+  const channelId = await getChannelForUserID(invoice.slackId)
+  if (channelId) {
+    const htmlInvoice = renderInvoice(invoice)
+    await sendPdf(htmlInvoice, channelId)
     return true
   } else {
     return false
