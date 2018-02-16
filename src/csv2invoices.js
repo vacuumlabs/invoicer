@@ -7,6 +7,8 @@ const columns = [
   'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'incomingInvoice',
 ]
 
+const booleanColumns = ['incomingInvoice', 'vendorVATPayer']
+
 function finRound(n) {
   return Math.round(n * 100 + 1e-6) / 100
 }
@@ -17,6 +19,7 @@ export function csv2invoices(csv) {
     let i = 0
     const row = {services: [], preTaxCostSum: 0, VATSum: 0, fullCostSum: 0}
     for (; i < columns.length; i++) row[columns[i]] = r[i]
+    for (let k of booleanColumns) row[k] = row[k].toLowerCase() === 'true'
     for (; i < r.length; i += 3) {
       if (r[i] === '') break
       const preTaxCost = finRound(parseFloat(r[i + 1]))
