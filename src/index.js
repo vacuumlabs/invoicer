@@ -27,7 +27,7 @@ const exampleQuery = {
   vendorID: '48207497',
   vendorTaxID: '2120112962',
   vendorVAT: 'SK2120112962',
-  vendorVATPayer: '',
+  vendorVATPayer: false,
   vendorIBAN: 'SK8809000000000494005548',
   vendorBIC: 'GIBASKBX',
   clientName: 'Samuel Hapák IT',
@@ -54,7 +54,7 @@ const exampleQuery = {
   preTaxCostSum: 141.81,
   VATSum: 19.00,
   fullCostSum: 151.23,
-  selfInvoicing: 'true',
+  incomingInvoice: true,
 }
 
 function query2invoice(query) {
