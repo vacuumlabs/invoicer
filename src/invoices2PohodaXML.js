@@ -1,10 +1,13 @@
 import handlebars from 'handlebars'
-import handlebarsIntl from 'handlebars-intl'
-
-handlebarsIntl.registerWith(handlebars)
+import c from './config'
+import _ from 'lodash'
 
 handlebars.registerHelper('XMLDate', (context) =>
   new Date(context).toISOString().slice(0, 10)
+)
+
+handlebars.registerHelper('toFixed2', (context) =>
+  context.toFixed(2)
 )
 
 handlebars.registerHelper('Address', (context) => {
@@ -25,13 +28,13 @@ const template = `
 <dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd" 
               xmlns:inv="http://www.stormware.cz/schema/version_2/invoice.xsd" 
               xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd" 
-              id="reactive" 
-              ico="48207497" 
+              id="${c.pohodaImportID}" 
+              ico="{{myID}}" 
               application="invoicer" 
               version="2.0" 
               note="Import FA">
     {{#each invoices}}
-    <dat:dataPackItem id="{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
+    <dat:dataPackItem id="{{partner.ID}}{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
             <inv:invoice version="2.0">
                 <inv:invoiceHeader>
                     {{#if isReceived}}
@@ -39,13 +42,6 @@ const template = `
                     {{else}}
                         <inv:invoiceType>issuedInvoice</inv:invoiceType>
                     {{/if}}
-                    <inv:number>
-                        <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
-                    </inv:number>
-                    <inv:symVar>{{invoicePrefix}}{{invoiceNumber}}</inv:symVar>
-                    <inv:symConst></inv:symConst>
-                    <inv:symSpec></inv:symSpec>
-                    
                     <inv:date>{{XMLDate issueDate}}</inv:date>
                     <inv:dateTax>{{XMLDate issueDate}}</inv:dateTax>
                     <inv:dateAccounting>{{XMLDate issueDate}}</inv:dateAccounting>
@@ -54,65 +50,30 @@ const template = `
                     <inv:text>Fakturujeme vám</inv:text>
                     
                     <inv:partnerIdentity>
-                    {{#if isReceived}}
-                        <typ:address>
-                            <typ:company>{{vendorName}}</typ:company>
-                            <typ:division></typ:division>
-                            <typ:name>{{vendorName}}</typ:name>
-                            {{Address vendorAddress}}
-                            {{#if vendorID}}<typ:ico>{{vendorID}}</typ:ico>{{/if}}
-                            {{#if vendorTaxID}}<typ:dic>{{vendorTaxID}}</typ:dic>{{/if}}
-                            {{#if vendorVAT}}<typ:icDph>{{vendorVAT}}</typ:icDph>{{/if}}
-                            <typ:phone></typ:phone>
-                        </typ:address>
-                        <typ:shipToAddress>
-                            <typ:company></typ:company>
-                            <typ:name></typ:name>
-                            <typ:city></typ:city>
-                            <typ:street></typ:street>
-                            <typ:phone></typ:phone>
-                        </typ:shipToAddress>
-                    {{else}}
-                        <typ:address>
-                            <typ:company>{{clientName}}</typ:company>
-                            <typ:division></typ:division>
-                            <typ:name>{{clientName}}</typ:name>
-                            {{Address clientAddress}}
-                            {{#if clientID}}<typ:ico>{{clientID}}</typ:ico>{{/if}}
-                            {{#if clientTaxID}}<typ:dic>{{clientTaxID}}</typ:dic>{{/if}}
-                            {{#if clientVAT}}<typ:icDph>{{clientVAT}}</typ:icDph>{{/if}}
-                            <typ:phone></typ:phone>
-                        </typ:address>
-                        <typ:shipToAddress>
-                            <typ:company></typ:company>
-                            <typ:name></typ:name>
-                            <typ:city></typ:city>
-                            <typ:street></typ:street>
-                            <typ:phone></typ:phone>
-                        </typ:shipToAddress>
-                    {{/if}}
+                    <typ:address>
+                        <typ:company>{{partner.name}}</typ:company>
+                        <typ:name>{{partner.name}}</typ:name>
+                        {{Address partner.address}}
+                        {{#if partner.ID}}<typ:ico>{{partner.ID}}</typ:ico>{{/if}}
+                        {{#if partner.taxID}}<typ:dic>{{partner.taxID}}</typ:dic>{{/if}}
+                        {{#if partner.VAT}}<typ:icDph>{{partner.VAT}}</typ:icDph>{{/if}}
+                    </typ:address>
                     </inv:partnerIdentity>
                     
-                    <inv:numberOrder></inv:numberOrder>
                     <inv:paymentType>
                         <typ:ids>Prevod</typ:ids>
                     </inv:paymentType>
                     <inv:account>
-                        {{#if vendorIBAN}}<typ:accountNo>{{vendorIBAN}}</typ:accountNo>{{/if}}
-                        {{#if vendorBIC}}<typ:bankCode>{{vendorBIC}}</typ:bankCode>{{/if}}
+                        {{#if partner.IBAN}}<typ:accountNo>{{partner.IBAN}}</typ:accountNo>{{/if}}
+                        {{#if partner.BIC}}<typ:bankCode>{{partner.BIC}}</typ:bankCode>{{/if}}
                     </inv:account>
                     
-                    <inv:note>Import z XML</inv:note>
+                    <inv:note>
+                        {{#isReceived}}vyhotovenie faktúry odberateľom{{/isReceived}}
+                        {{^vendorVATPayer}}dodávateľ nie je platcom DPH{{/vendorVATPayer}}
+                    </inv:note>
                     <inv:intNote>Tento doklad bol vytvorený importom zo XML.</inv:intNote>
-                    <inv:centre>
-                        <typ:ids></typ:ids>
-                    </inv:centre>
-                    <inv:activity>
-                        <typ:ids></typ:ids>
-                    </inv:activity>
-                    <inv:contract>
-                        <typ:ids></typ:ids>
-                    </inv:contract>
+                    
                 </inv:invoiceHeader>
                 <inv:invoiceDetail>
 
@@ -121,9 +82,9 @@ const template = `
                         <inv:text>{{name}}</inv:text>
                         <inv:quantity>1</inv:quantity>
                         {{#if vendorVATPayer}}<inv:rateVAT>high</inv:rateVAT>{{/if}}
-                        <!--<inv:percentVAT>{{VATLevel}}</inv:percentVAT>-->
+                        <inv:percentVAT>{{toFixed2 VATLevel}}</inv:percentVAT>
                         <inv:homeCurrency>
-                            <typ:unitPrice>{{fullCost}}</typ:unitPrice>
+                            <typ:unitPrice>{{toFixed2 fullCost}}</typ:unitPrice>
                         </inv:homeCurrency>
                     </inv:invoiceItem>
                 {{/services}}
@@ -136,8 +97,17 @@ const template = `
 </dat:dataPack>
 `
 
-export default function invoices2PohodaXML(context) {
-  return handlebars.compile(template)(context, {data: {intl: {
-    locales: 'sk-SK',
-  }}})
+export default function invoices2PohodaXML(invoices) {
+  const inv = invoices.invoices[0]
+  invoices.myID = inv.isReceived ? inv.clientID : inv.vendorID
+  for (const invoice of invoices.invoices) {
+    const partnerKeys = ['name', 'address', 'ID', 'taxID', 'VAT', 'IBAN', 'BIC']
+    const partnerType = invoice.isReceived ? 'vendor' : 'client'
+    const partner = {}
+    for (const k of partnerKeys) {
+      partner[k] = invoice[`${partnerType}${_.upperFirst(k)}`]
+    }
+    invoice.partner = partner
+  }
+  return handlebars.compile(template)(invoices)
 }

@@ -38,7 +38,6 @@ const exampleQuery = {
   clientVAT: 'CZ2120112962',
   issueDate: Date.parse('2017-11-07'),
   paymentDate: Date.parse('2017-11-15'),
-  isReceived: '',
   services: [{
     name: 'Prenájom pracovného priestoru za júl 2017',
     preTaxCost: 41.67,
@@ -56,7 +55,7 @@ const exampleQuery = {
   preTaxCostSum: 141.81,
   VATSum: 19.00,
   fullCostSum: 151.23,
-  selfInvoicing: 'true',
+  isReceived: '',
 }
 
 function query2invoice(query) {
