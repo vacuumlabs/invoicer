@@ -10,20 +10,6 @@ handlebars.registerHelper('toFixed2', (context) =>
   context.toFixed(2)
 )
 
-handlebars.registerHelper('Address', (context) => {
-  let tokens = context.split(',')
-  const street = tokens.shift()
-  tokens = tokens[0]
-  tokens = tokens.trim()
-  tokens = tokens.split(' ')
-  const zip = tokens.shift()
-  const city = tokens.join(' ')
-  return new handlebars.SafeString(`<typ:city>${city}</typ:city>
-          <typ:street>${street}</typ:street>
-          <typ:zip>${zip}</typ:zip>
-         `)
-})
-
 const template = `
 <dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd" 
               xmlns:inv="http://www.stormware.cz/schema/version_2/invoice.xsd" 
@@ -34,7 +20,7 @@ const template = `
               version="2.0" 
               note="Import FA">
     {{#each invoices}}
-    <dat:dataPackItem id="{{partner.ID}}{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
+    <dat:dataPackItem id="{{vendorID}}{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
             <inv:invoice version="2.0">
                 <inv:invoiceHeader>
                     {{#if isReceived}}
@@ -53,7 +39,7 @@ const template = `
                     <typ:address>
                         <typ:company>{{partner.name}}</typ:company>
                         <typ:name>{{partner.name}}</typ:name>
-                        {{Address partner.address}}
+                        <typ:street>{{partner.address}}</typ:street>
                         {{#if partner.ID}}<typ:ico>{{partner.ID}}</typ:ico>{{/if}}
                         {{#if partner.taxID}}<typ:dic>{{partner.taxID}}</typ:dic>{{/if}}
                         {{#if partner.VAT}}<typ:icDph>{{partner.VAT}}</typ:icDph>{{/if}}
