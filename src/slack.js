@@ -47,17 +47,19 @@ async function sendPdf(htmlInvoice, channelId) {
     .create(htmlInvoice, {format: 'A4'})
     .toBuffer(async (err, buffer) => {
       if (err) logger.warn('PDF conversion failed')
-
-      await apiCallMultipart(apiState, 'files.upload',
-        {
-          filename: 'invoice.pdf',
-          channel: channelId,
-          file: buffer,
-
-
-        }
-
-      )
+      const formData = {
+        filename: 'invoice.pdf',
+        channels: 'D97MH5YCR',
+        initial_comment: 'I have received your invoice!',
+        file: {
+          value: buffer,
+          options: {
+            filename: 'invoice.pdf',
+            contentType: 'application/pdf',
+          },
+        },
+      }
+      await apiCallMultipart(apiState, 'files.upload', formData)
     })
 }
 

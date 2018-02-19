@@ -70,7 +70,7 @@ export async function apiCall(state, name, data = {}) {
 
 export async function apiCallMultipart(state, name, data = {}) {
   for (const k in data) {
-    if (typeof data[k] === 'object') data[k] = JSON.stringify(data[k])
+    if (typeof data[k] === 'object' && k !== 'file') data[k] = JSON.stringify(data[k])
   }
 
   logger.log('verbose', `call slack.api.${name}`, data)
