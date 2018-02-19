@@ -162,7 +162,7 @@ const template = `
 			</table>
 		</div>
 		<div id="notes">
-			{{#selfInvoicing}}<div>vyhotovenie faktúry odberateľom</div>{{/selfInvoicing}}
+			{{#incomingInvoice}}<div>vyhotovenie faktúry odberateľom</div>{{/incomingInvoice}}
 			{{^vendorVATPayer}}<div>dodávateľ nie je platcom DPH</div>{{/vendorVATPayer}}
 		</div>
 

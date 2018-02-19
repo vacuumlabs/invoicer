@@ -100,6 +100,7 @@ function formatInvoice(invoice) {
   return `${date} ${cost} ${user} ${client} ⇒ ${vendor} <${url}|📩>`
 }
 
+
 async function listenUser(stream, user) {
   for (;;) {
     const event = await stream.take()
@@ -108,13 +109,16 @@ async function listenUser(stream, user) {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
+      const id = store({invoices})
+      const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
+      const xmlMessage = `PohodaXML: <${url}|📩>\n`
       await apiCall(apiState, 'chat.postMessage', {
         channel: c.invoicingChannel,
         as_user: true,
         text: 'You have uploaded a file, haven\'t you?',
         attachments: [{
           title: 'Invoices summary',
-          text: invoices.map(formatInvoice).join('\n'),
+          text: xmlMessage + invoices.map(formatInvoice).join('\n'),
         }],
       })
       for (const i of invoices) {
