@@ -68,4 +68,8 @@ export async function apiCall(state, name, data = {}) {
   return response
 }
 
-
+async function showError(channel, ts, msg) {
+  await apiCall(ts ? 'chat.update' : 'chat.postMessage', {
+    channel, ts, as_user: true, text: `:exclamation: ${msg}`, attachments: [],
+  })
+}
