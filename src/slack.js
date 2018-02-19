@@ -37,8 +37,9 @@ export async function listenSlack(token, stream) {
           .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
         continue
       } else {
-        await showError(apiState, event.channel.id, event.original_message.ts,
-          'I have lost your invoices. Please upload again.')
+        await showError(apiState, event.channel.id,
+                        'I have lost your invoices. Please upload again.', 
+                        event.original_message.ts)
       }
     }
   }
