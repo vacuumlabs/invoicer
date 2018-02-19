@@ -80,8 +80,8 @@ export async function apiCallMultipart(state, name, data = {}) {
   return response
 }
 
-async function showError(channel, ts, msg) {
-  await apiCall(ts ? 'chat.update' : 'chat.postMessage', {
+export async function showError(state, channel, msg, ts = null) {
+  return await apiCall(state, ts ? 'chat.update' : 'chat.postMessage', {
     channel, ts, as_user: true, text: `:exclamation: ${msg}`, attachments: [],
   })
 }

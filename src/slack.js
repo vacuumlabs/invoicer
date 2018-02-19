@@ -1,7 +1,7 @@
 import c from './config'
 import {createChannel} from 'yacol'
 import logger from 'winston'
-import {init, apiCall, apiCallMultipart} from './slackApi'
+import {init, apiCall, apiCallMultipart, showError} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
@@ -17,6 +17,7 @@ const request = _request.defaults({headers: {
 
 const streams = {}
 let apiState
+let latestInvoices = {ts: null}
 
 export async function listenSlack(token, stream) {
   apiState = init(token, stream)
@@ -30,6 +31,16 @@ export async function listenSlack(token, stream) {
       continue
     }
 
+    if (event.type === 'action') {
+      if (event.callback_id === latestInvoices.ts) {
+        await sendInvoices(latestInvoices.invoices)
+          .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
+        continue
+      } else {
+        await showError(apiState, event.channel.id, event.original_message.ts,
+          'I have lost your invoices. Please upload again.')
+      }
+    }
   }
 }
 
@@ -38,23 +49,23 @@ async function getChannelForUserID(userID) {
   if (channel.ok) {
     return (channel.channel.id)
   } else {
-    return undefined
+    return null
   }
 }
 
-async function sendPdf(htmlInvoice, channelId) {
+async function sendPdf(htmlInvoice, fileName, channelId) {
   pdf
     .create(htmlInvoice, {format: 'A4'})
     .toBuffer(async (err, buffer) => {
       if (err) logger.warn('PDF conversion failed')
       const formData = {
-        filename: 'invoice.pdf',
-        channels: 'D97MH5YCR',
-        initial_comment: 'I have received your invoice!',
+        filename: fileName,
+        channels: channelId,
+        initial_comment: 'Your monthly invoice from VacuumLabs:',
         file: {
           value: buffer,
           options: {
-            filename: 'invoice.pdf',
+            filename: fileName,
             contentType: 'application/pdf',
           },
         },
@@ -67,11 +78,32 @@ async function sendInvoiceToUser(invoice) {
   const channelId = await getChannelForUserID(invoice.slackId)
   if (channelId) {
     const htmlInvoice = renderInvoice(invoice)
-    await sendPdf(htmlInvoice, channelId)
+    await sendPdf(htmlInvoice, `${invoice.user}-${invoice.invoiceNumber}.pdf`, channelId)
     return true
   } else {
     return false
   }
+}
+
+async function sendInvoices(invoices) {
+  let failMessage = 'I was unable to deliver the invoice to users:\n'
+  let ts = null
+  let count = 0
+  for (const i of invoices) {
+    const success = await sendInvoiceToUser(i)
+    if (success) {
+      count++
+    } else {
+      if (!ts) ts = (await showError(apiState, c.invoicingChannel, failMessage)).ts
+      failMessage += `${i.user}\n`
+      await showError(apiState, c.invoicingChannel, failMessage, ts)
+    }
+  }
+  await apiCall(apiState, 'chat.postMessage', {
+    channel: c.invoicingChannel,
+    as_user: true,
+    text: `Successfully delivered ${count} invoices.`,
+  })
 }
 
 function streamForUser(userId) {
@@ -100,7 +132,6 @@ function formatInvoice(invoice) {
   return `${date} ${cost} ${user} ${client} ⇒ ${vendor} <${url}|📩>`
 }
 
-
 async function listenUser(stream, user) {
   for (;;) {
     const event = await stream.take()
@@ -109,6 +140,7 @@ async function listenUser(stream, user) {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
+      latestInvoices = {ts: `${event.ts}`, invoices}
       const id = store({invoices})
       const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
       const xmlMessage = `PohodaXML: <${url}|📩>\n`
@@ -116,21 +148,30 @@ async function listenUser(stream, user) {
         channel: c.invoicingChannel,
         as_user: true,
         text: 'You have uploaded a file, haven\'t you?',
-        attachments: [{
-          title: 'Invoices summary',
-          text: xmlMessage + invoices.map(formatInvoice).join('\n'),
-        }],
+        attachments: [
+          {
+            title: 'Invoices summary',
+            text: xmlMessage + invoices.map(formatInvoice).join('\n'),
+          },
+          {
+            text: 'Send invoices to users?',
+            callback_id: `${event.ts}`,
+            actions: [
+              {
+                name: 'send',
+                text: 'Send',
+                type: 'button',
+                value: JSON.stringify(invoices),
+                confirm: {
+                  title: 'Are you sure?',
+                  ok_text: 'Yes',
+                  dismiss_text: 'No',
+                },
+              },
+            ],
+          },
+        ],
       })
-      for (const i of invoices) {
-        const success = await sendInvoiceToUser(i)
-        if (i.slackId && !success) {
-          await apiCall(apiState, 'chat.postMessage', {
-            channel: c.invoicingChannel,
-            as_user: true,
-            text: `I didn't find user ${i.slackId}.`,
-          })
-        }
-      }
     }
   }
 }
