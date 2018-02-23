@@ -1,7 +1,7 @@
 import c from './config'
 import {createChannel} from 'yacol'
 import logger from 'winston'
-import {init, apiCall} from './slackApi'
+import {init, apiCall, showError} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
@@ -65,7 +65,13 @@ async function listenUser(stream, user) {
     if (event.subtype === 'file_share') {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
-      const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
+      try{
+        const invoices = csv2invoices(csv)
+      }
+      catch(e){
+        showError(apiState, c.invoicingChannel, e)
+        continue
+      }
       const id = store({invoices})
       const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
       const xmlMessage = `PohodaXML: <${url}|📩>\n`
