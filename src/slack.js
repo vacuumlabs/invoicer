@@ -17,7 +17,7 @@ const request = _request.defaults({headers: {
 
 const streams = {}
 let apiState
-let latestInvoices = {ts: null}
+const pendingInvoices = {}
 
 export async function listenSlack(token, stream) {
   apiState = init(token, stream)
@@ -32,16 +32,50 @@ export async function listenSlack(token, stream) {
     }
 
     if (event.type === 'action') {
-      if (event.callback_id === latestInvoices.ts) {
-        await sendInvoices(latestInvoices.invoices)
-          .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
+      if (pendingInvoices[event.callback_id]) {
+        await handleInvoicesAction(event)
         continue
       } else {
         await showError(apiState, event.channel.id,
-                        'I have lost your invoices. Please upload again.', 
-                        event.original_message.ts)
+          'I have lost your invoices. Please upload again.',
+          event.original_message.ts)
       }
     }
+  }
+}
+
+async function handleInvoicesAction(event) {
+  const {channel, ts, message: {attachments: [attachment]}} = pendingInvoices[event.callback_id].confirmation
+
+  async function updateMessage(attachmentUpdate) {
+    await apiCall(apiState, 'chat.update', {channel, ts, as_user: true,
+      attachments: [{...attachment, ...attachmentUpdate}],
+    })
+  }
+
+  async function cancelActions(invoices) {
+    await updateMessage({
+      pretext: ':no_entry_sign: Invoices canceled:',
+      color: 'danger',
+      actions: [],
+    })
+  }
+
+  if (event.actions[0].name === 'send') {
+    await updateMessage({
+      pretext: ':woman: Sending invoices:',
+      color: 'good',
+      actions: [],
+    })
+    await sendInvoices(pendingInvoices[event.callback_id].url)
+      .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
+    await updateMessage({
+      pretext: ':woman: Sending invoices: finished',
+      color: 'good',
+      actions: [],
+    })
+  } else {
+    await cancelActions(pendingInvoices[event.callback_id])
   }
 }
 
@@ -86,7 +120,9 @@ async function sendInvoiceToUser(invoice) {
   }
 }
 
-async function sendInvoices(invoices) {
+async function sendInvoices(url) {
+  const csv = await request.get(url)
+  const invoices = csv2invoices(csv)
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
@@ -141,11 +177,11 @@ async function listenUser(stream, user) {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
-      latestInvoices = {ts: `${event.ts}`, invoices}
+      pendingInvoices[event.ts] = {url: event.file.url_private}
       const id = store({invoices})
       const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
       const xmlMessage = `PohodaXML: <${url}|📩>\n`
-      await apiCall(apiState, 'chat.postMessage', {
+      const confirmation = await apiCall(apiState, 'chat.postMessage', {
         channel: c.invoicingChannel,
         as_user: true,
         text: 'You have uploaded a file, haven\'t you?',
@@ -162,17 +198,25 @@ async function listenUser(stream, user) {
                 name: 'send',
                 text: 'Send',
                 type: 'button',
-                value: JSON.stringify(invoices),
+                value: 'send',
                 confirm: {
                   title: 'Are you sure?',
                   ok_text: 'Yes',
                   dismiss_text: 'No',
                 },
               },
+              {
+                name: 'cancel',
+                text: 'Cancel',
+                type: 'button',
+                value: 'cancel',
+                style: 'danger',
+              },
             ],
           },
         ],
       })
+      pendingInvoices[event.ts] = {...pendingInvoices[event.ts], confirmation}
     }
   }
 }
