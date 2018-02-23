@@ -21,26 +21,30 @@ const pendingInvoices = {}
 
 export async function listenSlack(token, stream) {
   apiState = init(token, stream)
-
   for (;;) {
-    const event = await stream.take()
-    logger.log('verbose', `slack event ${event.type}`, event)
+    let id
+    for (;;) {
+      const event = await stream.take()
+      logger.log('verbose', `slack event ${event.type}`, event)
 
-    if (event.type === 'message' && event.channel === c.invoicingChannel) {
-      streamForUser(event.user).put(event)
-      continue
-    }
-
-    if (event.type === 'action') {
-      if (pendingInvoices[event.callback_id]) {
-        await handleInvoicesAction(event)
+      if (event.type === 'message' && event.channel === c.invoicingChannel) {
+        streamForUser(event.user).put(event)
         continue
-      } else {
-        await showError(apiState, event.channel.id,
-          'I have lost your invoices. Please upload again.',
-          event.original_message.ts)
+      }
+
+      if (event.type === 'action') {
+        id = event.callback_id
+        if (pendingInvoices[id]) {
+          await handleInvoicesAction(event)
+          break
+        } else {
+          await showError(apiState, event.channel.id,
+            'I have lost your invoices. Please upload again.',
+            event.original_message.ts)
+        }
       }
     }
+    delete pendingInvoices[id]
   }
 }
 
