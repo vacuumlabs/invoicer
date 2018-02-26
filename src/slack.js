@@ -65,10 +65,10 @@ async function listenUser(stream, user) {
     if (event.subtype === 'file_share') {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
-      try{
-        const invoices = csv2invoices(csv)
-      }
-      catch(e){
+      let invoices
+      try {
+        invoices = csv2invoices(csv)
+      } catch (e) {
         showError(apiState, c.invoicingChannel, e)
         continue
       }
