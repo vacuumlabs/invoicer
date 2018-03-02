@@ -8,6 +8,7 @@ import querystring from 'querystring'
 import renderInvoice from './invoice'
 import pdf from 'html-pdf'
 import {routes as r, store} from './routes'
+import renderXML from './invoices2PohodaXML'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -113,6 +114,24 @@ async function sendPdf(htmlInvoice, fileName, channelId) {
     })
 }
 
+async function sendXML(invoices, title, name) {
+  const filename = `${name}.xml`
+
+  await apiCallMultipart(apiState, 'files.upload', {
+    title: `${title}.xml`,
+    filename,
+    channels: c.invoicingChannel,
+    initial_comment: 'Pohoda XML import',
+    file: {
+      value: renderXML({invoices}),
+      options: {
+        filename,
+        contentType: 'application/xml',
+      }
+    }
+  })
+}
+
 async function sendInvoiceToUser(invoice) {
   const channelId = await getChannelForUserID(invoice.slackId)
   if (channelId) {
@@ -160,31 +179,31 @@ function formatInvoice(invoice) {
     (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l)
 
 
-  const [date, cost, user, client, vendor] = [
+  const [date, cost, user, partner] = [
     invoice.issueDate.padEnd(10),
     currencyFormat.format(invoice.fullCostSum).padStart(9),
     trimPad(invoice.user, 13),
-    trimPad(invoice.clientName, 18),
-    trimPad(invoice.vendorName, 18),
+    trimPad(invoice.incomingInvoice ? invoice.vendorName : invoice.clientName, 18),
   ].map((f) => `\`${f}\``)
 
+  const direction = invoice.incomingInvoice ? '⟹' : '⟸'
   const id = store(invoice)
   const url = `${c.host}${r.invoice}?${querystring.stringify({id})}`
-  return `${date} ${cost} ${user} ${client} ⇒ ${vendor} <${url}|📩>`
+  return `${date} ${cost} ${user} ${partner} ${direction} <${url}|📩>`
 }
 
 async function listenUser(stream, user) {
   for (;;) {
     const event = await stream.take()
 
-    if (event.subtype === 'file_share') {
+    if (event.subtype === 'file_share' && event.file.filetype === 'csv') {
       logger.verbose('file uploaded', event.file.url_private)
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
       pendingInvoices[event.ts] = {url: event.file.url_private}
       const id = store({invoices})
       const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
-      const xmlMessage = `PohodaXML: <${url}|📩>\n`
+      await sendXML(invoices, event.file.title, event.file.name)
       const confirmation = await apiCall(apiState, 'chat.postMessage', {
         channel: c.invoicingChannel,
         as_user: true,
@@ -192,20 +211,21 @@ async function listenUser(stream, user) {
         attachments: [
           {
             title: 'Invoices summary',
-            text: xmlMessage + invoices.map(formatInvoice).join('\n'),
+            text: invoices.map(formatInvoice).join('\n'),
           },
           {
-            text: 'Send invoices to users?',
+            title: 'Should I send above invoices?',
             callback_id: `${event.ts}`,
             actions: [
               {
                 name: 'send',
-                text: 'Send',
+                text: `Send ${invoices.length} invoices`,
                 type: 'button',
                 value: 'send',
+                style: 'primary',
                 confirm: {
-                  title: 'Are you sure?',
-                  ok_text: 'Yes',
+                  title: `Do you really want to send these invoices?`,
+                  ok_text: 'Yes, send them all',
                   dismiss_text: 'No',
                 },
               },
