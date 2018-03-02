@@ -68,8 +68,20 @@ export async function apiCall(state, name, data = {}) {
   return response
 }
 
-async function showError(channel, ts, msg) {
-  await apiCall(ts ? 'chat.update' : 'chat.postMessage', {
+export async function apiCallMultipart(state, name, data = {}) {
+  for (const k in data) {
+    if (typeof data[k] === 'object' && k !== 'file') data[k] = JSON.stringify(data[k])
+  }
+
+  logger.log('verbose', `call slack.api.${name}`, data)
+  const response = JSON.parse(await request.post(`${API}${name}`, {formData: {...data, token: state.token}}))
+  logger.log('verbose', `response slack.api.${name}`, {args: data, response})
+
+  return response
+}
+
+export async function showError(state, channel, msg, ts = null) {
+  return await apiCall(state, ts ? 'chat.update' : 'chat.postMessage', {
     channel, ts, as_user: true, text: `:exclamation: ${msg}`, attachments: [],
   })
 }

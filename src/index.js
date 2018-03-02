@@ -4,7 +4,6 @@ import bodyParser from 'body-parser'
 import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
 import renderInvoice from './invoice'
-import renderXML from './invoices2PohodaXML'
 import {listenSlack} from './slack'
 import pdf from 'html-pdf'
 import {routes as r, shortNames} from './routes'
@@ -20,7 +19,7 @@ const {register, runApp} = expressHelpers
 
 const slackEvents = createChannel()
 
-const exampleQuery = {
+/*const exampleQuery = {
   invoicePrefix: 'VAC17',
   invoiceNumber: '0007',
   vendorName: 'vacuumlabs s.r.o.',
@@ -56,7 +55,7 @@ const exampleQuery = {
   VATSum: 19.00,
   fullCostSum: 151.23,
   incomingInvoice: true,
-}
+}*/
 
 function query2invoice(query) {
   const invoice = query.id ? shortNames[query.id] : JSON.parse(query.invoice)
@@ -87,21 +86,8 @@ function* invoice(req, res) {
   })()
 }
 
-function* pohodaXML(req, res) {
-  // eslint-disable-next-line require-await
-  yield (async function() {
-    const XML = renderXML({invoices: [exampleQuery]})//shortNames[req.query.id])
-    res.set({
-      'Content-Disposition': 'attachment; filename="pohodaImport.xml"',
-    })
-    res.status(200).send(XML)
-  })()
-}
-
-
 register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)
-register(app, 'get', r.pohodaXML, pohodaXML)
 
 // eslint-disable-next-line require-await
 ;(async function() {
