@@ -18,39 +18,37 @@ const request = _request.defaults({headers: {
 
 const streams = {}
 let apiState
-const pendingInvoices = {}
+let pendingInvoice = null
 
 export async function listenSlack(token, stream) {
   apiState = init(token, stream)
+
   for (;;) {
-    let id
-    for (;;) {
-      const event = await stream.take()
-      logger.log('verbose', `slack event ${event.type}`, event)
+    const event = await stream.take()
+    logger.log('verbose', `slack event ${event.type}`, event)
 
-      if (event.type === 'message' && event.channel === c.invoicingChannel) {
-        streamForUser(event.user).put(event)
-        continue
-      }
+    if (event.type === 'message' && event.channel === c.invoicingChannel) {
+      streamForUser(event.user).put(event)
+      continue
+    }
 
-      if (event.type === 'action') {
-        id = event.callback_id
-        if (pendingInvoices[id]) {
-          await handleInvoicesAction(event)
-          break
-        } else {
-          await showError(apiState, event.channel.id,
-            'I have lost your invoices. Please upload again.',
-            event.original_message.ts)
-        }
+    if (event.type === 'action') {
+      if (pendingInvoice && pendingInvoice.id === event.callback_id) {
+        await handleInvoicesAction(event)
+        pendingInvoice = null
+      } else {
+        await showError(apiState, event.channel.id,
+          'The operation has timed out. Please, re-upload your CSV file with invoices.',
+          event.original_message.ts
+        )
       }
     }
-    delete pendingInvoices[id]
   }
 }
 
 async function handleInvoicesAction(event) {
-  const {channel, ts, message: {attachments: [attachment]}} = pendingInvoices[event.callback_id].confirmation
+  const {channel, ts, message: {attachments: [attachment]}} =
+    pendingInvoice.confirmation
 
   async function updateMessage(attachmentUpdate) {
     await apiCall(apiState, 'chat.update', {channel, ts, as_user: true,
@@ -58,7 +56,7 @@ async function handleInvoicesAction(event) {
     })
   }
 
-  async function cancelActions(invoices) {
+  async function cancelActions() {
     await updateMessage({
       pretext: ':no_entry_sign: Invoices canceled:',
       color: 'danger',
@@ -72,7 +70,7 @@ async function handleInvoicesAction(event) {
       color: 'good',
       actions: [],
     })
-    await sendInvoices(pendingInvoices[event.callback_id].url)
+    await sendInvoices(pendingInvoice.invoices)
       .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
     await updateMessage({
       pretext: ':woman: Sending invoices: finished',
@@ -80,7 +78,7 @@ async function handleInvoicesAction(event) {
       actions: [],
     })
   } else {
-    await cancelActions(pendingInvoices[event.callback_id])
+    await cancelActions()
   }
 }
 
@@ -93,10 +91,10 @@ async function getChannelForUserID(userID) {
   }
 }
 
-async function sendPdf(htmlInvoice, fileName, channelId) {
+function sendPdf(htmlInvoice, fileName, channelId) {
   pdf
     .create(htmlInvoice, {format: 'A4'})
-    .toBuffer(async (err, buffer) => {
+    .toBuffer((err, buffer) => {
       if (err) logger.warn('PDF conversion failed')
       const formData = {
         filename: fileName,
@@ -110,7 +108,7 @@ async function sendPdf(htmlInvoice, fileName, channelId) {
           },
         },
       }
-      await apiCallMultipart(apiState, 'files.upload', formData)
+      apiCallMultipart(apiState, 'files.upload', formData)
     })
 }
 
@@ -127,8 +125,8 @@ async function sendXML(invoices, title, name) {
       options: {
         filename,
         contentType: 'application/xml',
-      }
-    }
+      },
+    },
   })
 }
 
@@ -136,16 +134,14 @@ async function sendInvoiceToUser(invoice) {
   const channelId = await getChannelForUserID(invoice.slackId)
   if (channelId) {
     const htmlInvoice = renderInvoice(invoice)
-    await sendPdf(htmlInvoice, `${invoice.user}-${invoice.invoiceNumber}.pdf`, channelId)
+    sendPdf(htmlInvoice, `${invoice.user}-${invoice.invoiceNumber}.pdf`, channelId)
     return true
   } else {
     return false
   }
 }
 
-async function sendInvoices(url) {
-  const csv = await request.get(url)
-  const invoices = csv2invoices(csv)
+async function sendInvoices(invoices) {
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
@@ -198,12 +194,12 @@ async function listenUser(stream, user) {
 
     if (event.subtype === 'file_share' && event.file.filetype === 'csv') {
       logger.verbose('file uploaded', event.file.url_private)
+
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
-      pendingInvoices[event.ts] = {url: event.file.url_private}
-      const id = store({invoices})
-      const url = `${c.host}${r.pohodaXML}?${querystring.stringify({id})}`
+
       await sendXML(invoices, event.file.title, event.file.name)
+
       const confirmation = await apiCall(apiState, 'chat.postMessage', {
         channel: c.invoicingChannel,
         as_user: true,
@@ -224,7 +220,7 @@ async function listenUser(stream, user) {
                 value: 'send',
                 style: 'primary',
                 confirm: {
-                  title: `Do you really want to send these invoices?`,
+                  title: 'Do you really want to send these invoices?',
                   ok_text: 'Yes, send them all',
                   dismiss_text: 'No',
                 },
@@ -240,7 +236,12 @@ async function listenUser(stream, user) {
           },
         ],
       })
-      pendingInvoices[event.ts] = {...pendingInvoices[event.ts], confirmation}
+
+      pendingInvoice = {
+        id: event.ts,
+        invoices,
+        confirmation,
+      }
     }
   }
 }

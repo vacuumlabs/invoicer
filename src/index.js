@@ -19,7 +19,7 @@ const {register, runApp} = expressHelpers
 
 const slackEvents = createChannel()
 
-const exampleQuery = {
+/*const exampleQuery = {
   invoicePrefix: 'VAC17',
   invoiceNumber: '0007',
   vendorName: 'vacuumlabs s.r.o.',
@@ -55,7 +55,7 @@ const exampleQuery = {
   VATSum: 19.00,
   fullCostSum: 151.23,
   incomingInvoice: true,
-}
+}*/
 
 function query2invoice(query) {
   const invoice = query.id ? shortNames[query.id] : JSON.parse(query.invoice)
