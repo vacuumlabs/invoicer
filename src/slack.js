@@ -74,11 +74,13 @@ async function handleInvoicesAction(event) {
     })
     await sendInvoices(pendingInvoice.invoices)
       .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
-    await updateMessage({
-      pretext: ':woman: Sending invoices: finished',
-      color: 'good',
-      actions: [],
+
+    await apiCall(apiState, 'chat.update', {
+      channel, ts, as_user: true,
+      text: ':woman: Invoices sent successfully.',
+      attachments: [],
     })
+
   } else {
     await cancelInvoices(ts)
   }
