@@ -46,6 +46,11 @@ export async function listenSlack(token, stream) {
   }
 }
 
+async function cancelInvoices(ts) {
+  await showError(apiState, c.invoicingChannel, 'Invoices canceled', ts)
+}
+
+
 async function handleInvoicesAction(event) {
   const {channel, ts, message: {attachments: [attachment]}} =
     pendingInvoice.confirmation
@@ -53,14 +58,6 @@ async function handleInvoicesAction(event) {
   async function updateMessage(attachmentUpdate) {
     await apiCall(apiState, 'chat.update', {channel, ts, as_user: true,
       attachments: [{...attachment, ...attachmentUpdate}],
-    })
-  }
-
-  async function cancelActions() {
-    await updateMessage({
-      pretext: ':no_entry_sign: Invoices canceled:',
-      color: 'danger',
-      actions: [],
     })
   }
 
@@ -78,7 +75,7 @@ async function handleInvoicesAction(event) {
       actions: [],
     })
   } else {
-    await cancelActions()
+    await cancelInvoices(ts)
   }
 }
 
@@ -194,6 +191,8 @@ async function listenUser(stream, user) {
 
     if (event.subtype === 'file_share' && event.file.filetype === 'csv') {
       logger.verbose('file uploaded', event.file.url_private)
+
+      if (pendingInvoice) await cancelInvoices(pendingInvoice.confirmation.ts)
 
       const csv = await request.get(event.file.url_private)
       const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
