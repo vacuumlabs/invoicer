@@ -1,5 +1,4 @@
 import c from './config'
-import {createChannel} from 'yacol'
 import logger from 'winston'
 import {init, apiCall, apiCallMultipart, showError} from './slackApi'
 import _request from 'request-promise'
@@ -16,19 +15,25 @@ const request = _request.defaults({headers: {
   Authorization: `Bearer ${c.slack.botToken}`,
 }})
 
-const streams = {}
 let apiState
 let pendingInvoice = null
 
 export async function listenSlack(token, stream) {
   apiState = init(token, stream)
 
+  const isCSVUpload = (e) => (
+    e.type === 'message' &&
+    e.subtype === 'file_share' &&
+    e.file.filetype === 'csv'
+  )
+
   for (;;) {
     const event = await stream.take()
     logger.log('verbose', `slack event ${event.type}`, event)
 
-    if (event.type === 'message' && event.channel === c.invoicingChannel) {
-      streamForUser(event.user).put(event)
+    if (isCSVUpload(event) && event.channel === c.invoicingChannel) {
+      logger.verbose('csv uploaded', event.file.url_private)
+      handleCSVUpload(event)
       continue
     }
 
@@ -159,14 +164,6 @@ async function sendInvoices(invoices) {
   })
 }
 
-function streamForUser(userId) {
-  if (streams[userId] == null) {
-    streams[userId] = createChannel()
-    listenUser(streams[userId], userId)
-  }
-  return streams[userId]
-}
-
 function formatInvoice(invoice) {
   const trimPad = (str, l) =>
     (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l)
@@ -185,62 +182,54 @@ function formatInvoice(invoice) {
   return `${date} ${cost} ${user} ${partner} ${direction} <${url}|📩>`
 }
 
-async function listenUser(stream, user) {
-  for (;;) {
-    const event = await stream.take()
+async function handleCSVUpload(event) {
+  if (pendingInvoice) await cancelInvoices(pendingInvoice.confirmation.ts)
 
-    if (event.subtype === 'file_share' && event.file.filetype === 'csv') {
-      logger.verbose('file uploaded', event.file.url_private)
+  const csv = await request.get(event.file.url_private)
+  const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
 
-      if (pendingInvoice) await cancelInvoices(pendingInvoice.confirmation.ts)
+  await sendXML(invoices, event.file.title, event.file.name)
 
-      const csv = await request.get(event.file.url_private)
-      const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
-
-      await sendXML(invoices, event.file.title, event.file.name)
-
-      const confirmation = await apiCall(apiState, 'chat.postMessage', {
-        channel: c.invoicingChannel,
-        as_user: true,
-        text: 'You have uploaded a file, haven\'t you?',
-        attachments: [
+  const confirmation = await apiCall(apiState, 'chat.postMessage', {
+    channel: c.invoicingChannel,
+    as_user: true,
+    text: 'You have uploaded a file, haven\'t you?',
+    attachments: [
+      {
+        title: 'Invoices summary',
+        text: invoices.map(formatInvoice).join('\n'),
+      },
+      {
+        title: 'Should I send above invoices?',
+        callback_id: `${event.ts}`,
+        actions: [
           {
-            title: 'Invoices summary',
-            text: invoices.map(formatInvoice).join('\n'),
+            name: 'send',
+            text: `Send ${invoices.length} invoices`,
+            type: 'button',
+            value: 'send',
+            style: 'primary',
+            confirm: {
+              title: 'Do you really want to send these invoices?',
+              ok_text: 'Yes, send them all',
+              dismiss_text: 'No',
+            },
           },
           {
-            title: 'Should I send above invoices?',
-            callback_id: `${event.ts}`,
-            actions: [
-              {
-                name: 'send',
-                text: `Send ${invoices.length} invoices`,
-                type: 'button',
-                value: 'send',
-                style: 'primary',
-                confirm: {
-                  title: 'Do you really want to send these invoices?',
-                  ok_text: 'Yes, send them all',
-                  dismiss_text: 'No',
-                },
-              },
-              {
-                name: 'cancel',
-                text: 'Cancel',
-                type: 'button',
-                value: 'cancel',
-                style: 'danger',
-              },
-            ],
+            name: 'cancel',
+            text: 'Cancel',
+            type: 'button',
+            value: 'cancel',
+            style: 'danger',
           },
         ],
-      })
+      },
+    ],
+  })
 
-      pendingInvoice = {
-        id: event.ts,
-        invoices,
-        confirmation,
-      }
-    }
+  pendingInvoice = {
+    id: event.ts,
+    invoices,
+    confirmation,
   }
 }
