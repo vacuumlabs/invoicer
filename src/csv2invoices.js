@@ -4,10 +4,10 @@ const columns = [
   'user', 'slackId', 'invoicePrefix', 'invoiceNumber', 'vendorName',
   'vendorAddress', 'vendorID', 'vendorTaxID', 'vendorVAT', 'vendorVATPayer',
   'vendorIBAN', 'vendorBIC', 'clientName', 'clientAddress', 'clientID',
-  'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'incomingInvoice',
+  'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'isReceived',
 ]
 
-const booleanColumns = ['incomingInvoice', 'vendorVATPayer']
+const booleanColumns = ['isReceived', 'vendorVATPayer']
 
 function finRound(n) {
   return Math.round(n * 100 + 1e-6) / 100
