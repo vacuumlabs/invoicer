@@ -20,9 +20,11 @@ const template = `
               version="2.0" 
               note="Import FA">
     {{#each invoices}}
-    <dat:dataPackItem id="{{vendorID}}{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
+    <dat:dataPackItem id="{{vendorID}}-{{invoicePrefix}}{{invoiceNumber}}" version="2.0">
             <inv:invoice version="2.0">
                 <inv:invoiceHeader>
+                    <inv:originalDocument>{{invoicePrefix}}{{invoiceNumber}}</inv:originalDocument>
+                    <inv:symVar>{{symVar}}</inv:symVar>
                     {{#if isReceived}}
                         <inv:invoiceType>receivedInvoice</inv:invoiceType>
                     {{else}}
@@ -47,7 +49,7 @@ const template = `
                     </inv:partnerIdentity>
                     
                     <inv:paymentType>
-                        <typ:ids>Prevod</typ:ids>
+                        <typ:ids>draft</typ:ids>
                     </inv:paymentType>
                     <inv:account>
                         {{#if partner.IBAN}}<typ:accountNo>{{partner.IBAN}}</typ:accountNo>{{/if}}
@@ -94,6 +96,8 @@ export default function invoices2PohodaXML(invoices) {
       partner[k] = invoice[`${partnerType}${_.upperFirst(k)}`]
     }
     invoice.partner = partner
+
+    invoice.symVar = (invoice.invoicePrefix + invoice.invoiceNumber).match(/\d+$/)[0]
   }
   return handlebars.compile(template)(invoices)
 }
