@@ -164,12 +164,16 @@ const template = `
 		<div id="notes">
 			{{#incomingInvoice}}<div>vyhotovenie faktúry odberateľom</div>{{/incomingInvoice}}
 			{{^vendorVATPayer}}<div>dodávateľ nie je platcom DPH</div>{{/vendorVATPayer}}
+      {{^domestic}}<div>Faktúra je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.</div>{{/domestic}}
 		</div>
 
   </body>
 </html>
 `
 export default function invoice(context) {
+  const vat2country = (vat) => vat ? vat.substring(0, 2).toLowerCase() : 'sk'
+  context.domestic = vat2country(context.vendorVAT) === vat2country(context.clientVAT)
+
   return handlebars.compile(template)(context, {data: {intl: {
     locales: 'sk-SK',
     formats: {number: {EUR: {style: 'currency', currency: 'EUR'}}},
