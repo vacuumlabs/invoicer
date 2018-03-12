@@ -11,7 +11,7 @@
     "test": "babel-node -- ./test.js",
     "eslint": "eslint src",
     "build": "babel src -d dist",
-    "start": "node -- dist/index.js",
+    "start": "node --icu-data-dir=./node_modules/full-icu -- dist/index.js",
     "deploy-now": "now `sed 's/#.*$//;/^\\s*$/d;s/^/-e /' .env.prod`"
   },
   "devDependencies": {
@@ -32,6 +32,7 @@
     "body-parser": "^1.17.2",
     "csv-parse": "^2.0.2",
     "express": "^4.15.3",
+    "full-icu": "^1.2.1",
     "handlebars": "^4.0.11",
     "handlebars-intl": "^1.1.2",
     "html-pdf": "^2.2.0",
