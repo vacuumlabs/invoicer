@@ -54,7 +54,10 @@ const template = `
                     </typ:address>
                     </inv:partnerIdentity>
                     
-                    <inv:paymentType>draft</inv:paymentType>
+                    <inv:paymentType>
+                      <typ:paymentType>draft</typ:paymentType>
+                    </inv:paymentType>
+
                     {{#if partner.IBAN}}
                     <inv:paymentAccount>{{partner.IBAN}}</inv:paymentAccount>
                     {{/if}}
