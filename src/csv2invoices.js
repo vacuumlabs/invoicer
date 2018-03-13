@@ -2,9 +2,10 @@ import parse from 'csv-parse/lib/sync'
 
 const columns = [
   'user', 'slackId', 'invoicePrefix', 'invoiceNumber', 'vendorName',
-  'vendorAddress', 'vendorID', 'vendorTaxID', 'vendorVAT', 'vendorVATPayer',
-  'vendorIBAN', 'vendorBIC', 'clientName', 'clientAddress', 'clientID',
-  'clientTaxID', 'clientVAT', 'issueDate', 'paymentDate', 'isReceived',
+  'vendorStreet', 'vendorCity', 'vendorZip', 'vendorCountry', 'vendorID', 'vendorTaxID',
+  'vendorVAT', 'vendorVATPayer', 'vendorIBAN', 'vendorBIC', 'clientName',
+  'clientStreet', 'clientCity', 'clientZip', 'clientCountry', 'clientID', 'clientTaxID',
+  'clientVAT', 'issueDate', 'paymentDate', 'isReceived',
 ]
 
 const booleanColumns = ['isReceived', 'vendorVATPayer']

@@ -41,20 +41,23 @@ const template = `
                     <typ:address>
                         <typ:company>{{partner.name}}</typ:company>
                         <typ:name>{{partner.name}}</typ:name>
-                        <typ:street>{{partner.address}}</typ:street>
+                        <typ:city>{{partner.city}}</typ:city>
+                        <typ:street>{{partner.street}}</typ:street>
+                        <typ:zip>{{partner.zip}}</typ:zip>
                         {{#if partner.ID}}<typ:ico>{{partner.ID}}</typ:ico>{{/if}}
                         {{#if partner.taxID}}<typ:dic>{{partner.taxID}}</typ:dic>{{/if}}
-                        {{#if partner.VAT}}<typ:icDph>{{partner.VAT}}</typ:icDph>{{/if}}
+                        {{#if partner.VAT}}
+                          <typ:icDph>{{partner.VAT}}</typ:icDph>
+                        {{else}}
+                          <typ:icDph>0</typ:icDph>
+                        {{/if}}
                     </typ:address>
                     </inv:partnerIdentity>
                     
-                    <inv:paymentType>
-                        <typ:ids>draft</typ:ids>
-                    </inv:paymentType>
-                    <inv:account>
-                        {{#if partner.IBAN}}<typ:accountNo>{{partner.IBAN}}</typ:accountNo>{{/if}}
-                        {{#if partner.BIC}}<typ:bankCode>{{partner.BIC}}</typ:bankCode>{{/if}}
-                    </inv:account>
+                    <inv:paymentType>draft</inv:paymentType>
+                    {{#if partner.IBAN}}
+                    <inv:paymentAccount>{{partner.IBAN}}</inv:paymentAccount>
+                    {{/if}}
                     
                     <inv:note>
                         {{#isReceived}}vyhotovenie faktúry odberateľom{{/isReceived}}
@@ -89,7 +92,7 @@ export default function invoices2PohodaXML(invoices) {
   const inv = invoices.invoices[0]
   invoices.myID = inv.isReceived ? inv.clientID : inv.vendorID
   for (const invoice of invoices.invoices) {
-    const partnerKeys = ['name', 'address', 'ID', 'taxID', 'VAT', 'IBAN', 'BIC']
+    const partnerKeys = ['name', 'city', 'street', 'zip', 'ID', 'taxID', 'VAT', 'IBAN', 'BIC']
     const partnerType = invoice.isReceived ? 'vendor' : 'client'
     const partner = {}
     for (const k of partnerKeys) {
@@ -99,5 +102,6 @@ export default function invoices2PohodaXML(invoices) {
 
     invoice.symVar = (invoice.invoicePrefix + invoice.invoiceNumber).match(/\d+$/)[0]
   }
+  console.log(invoices)
   return handlebars.compile(template)(invoices)
 }
