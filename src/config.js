@@ -12,5 +12,6 @@ export default transenv()(({str, bool, num}) => {
     slack: {
       botToken: str('slack_bot_token'),
     },
+    pohodaImportID: str('pohoda_import_id'),
   }
 })

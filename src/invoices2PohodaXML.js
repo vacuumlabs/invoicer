@@ -59,7 +59,10 @@ const template = `
                     </inv:paymentType>
 
                     {{#if partner.IBAN}}
-                    <inv:paymentAccount>{{partner.IBAN}}</inv:paymentAccount>
+                    <inv:paymentAccount>
+                      <typ:accountNo>{{partner.IBAN}}</typ:accountNo>
+                      <typ:bankCode>{{partner.BIC}}</typ:bankCode>
+                    </inv:paymentAccount>
                     {{/if}}
                     
                     <inv:note>
@@ -75,10 +78,12 @@ const template = `
                     <inv:invoiceItem>
                         <inv:text>{{name}}</inv:text>
                         <inv:quantity>1</inv:quantity>
-                        {{#if vendorVATPayer}}<inv:rateVAT>high</inv:rateVAT>{{/if}}
+                        {{#if ../vendorVATPayer}}<inv:rateVAT>high</inv:rateVAT>{{/if}}
                         <inv:percentVAT>{{toFixed2 VATLevel}}</inv:percentVAT>
                         <inv:homeCurrency>
-                            <typ:unitPrice>{{toFixed2 fullCost}}</typ:unitPrice>
+                            <typ:unitPrice>{{toFixed2 preTaxCost}}</typ:unitPrice>
+                            <typ:price>{{toFixed2 preTaxCost}}</typ:price>
+                            <typ:priceVAT>{{toFixed2 VAT}}</typ:priceVAT>
                         </inv:homeCurrency>
                     </inv:invoiceItem>
                 {{/services}}
