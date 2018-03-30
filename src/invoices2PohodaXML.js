@@ -68,6 +68,7 @@ const template = `
                     <inv:note>
                         {{#isReceived}}vyhotovenie faktúry odberateľom{{/isReceived}}
                         {{^vendorVATPayer}}dodávateľ nie je platcom DPH{{/vendorVATPayer}}
+                        {{#if note}}{{note}}{{/if}}
                     </inv:note>
                     <inv:intNote>Tento doklad bol vytvorený importom zo XML.</inv:intNote>
                     

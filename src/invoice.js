@@ -169,6 +169,7 @@ const template = `
 			{{#incomingInvoice}}<div>vyhotovenie faktúry odberateľom</div>{{/incomingInvoice}}
 			{{^vendorVATPayer}}<div>dodávateľ nie je platcom DPH</div>{{/vendorVATPayer}}
       {{^domestic}}<div>Faktúra je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.</div>{{/domestic}}
+      {{#if note}}<div>{{note}}</div>{{/if}}
 		</div>
 
   </body>
