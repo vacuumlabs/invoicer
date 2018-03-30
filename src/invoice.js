@@ -186,7 +186,7 @@ export default function invoice(context) {
   context.domestic = vat2country(context.vendorVAT) === vat2country(context.clientVAT)
 
   return handlebars.compile(template)(context, {data: {intl: {
-    locales: 'sk-SK',
+    locales: 'en-US',
     formats: {number: {EUR: {style: 'currency', currency: 'EUR'}}},
   }}})
 }
