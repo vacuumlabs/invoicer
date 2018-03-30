@@ -33,6 +33,11 @@ const template = `
 			border-bottom: 1px solid black;
 		}
 
+    #payment-terms dt {
+      width: 30%;
+    }
+
+
 		#services {
 			padding: 6px 0px 6px 12px;
 			border-bottom: 1px solid black;
@@ -140,6 +145,7 @@ const template = `
     </div>
 		<div id="payment-terms">
 			<dl>
+				<dt>Dátum zdaniteľného plnenia: </dt><dd>{{formatDate issueDate day="numeric" month="long" year="numeric"}}</dd>
 				<dt>Dátum vyhotovenia: </dt><dd>{{formatDate issueDate day="numeric" month="long" year="numeric"}}</dd>
 				<dt>Dátum splatnosti: </dt><dd>{{formatDate paymentDate day="numeric" month="long" year="numeric"}}</dd>
 			</dl>
