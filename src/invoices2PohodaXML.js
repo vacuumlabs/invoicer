@@ -28,6 +28,9 @@ const template = `
                     {{#if isReceived}}
                         <inv:invoiceType>receivedInvoice</inv:invoiceType>
                     {{else}}
+                        <inv:number>
+                          <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
+                        </inv:number>
                         <inv:invoiceType>issuedInvoice</inv:invoiceType>
                     {{/if}}
                     <inv:date>{{XMLDate issueDate}}</inv:date>
