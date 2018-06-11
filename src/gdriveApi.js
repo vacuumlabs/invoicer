@@ -21,19 +21,17 @@ export async function init() {
 
 export async function ensureFolder(folderPath, share = null) {
   if (folderIdByPath[folderPath]) {
-    const byId = await getById(folderIdByPath[folderPath], true).catch((err) => {
-      if (err.code === 404) { // stale cache
+    folderIdByPath[folderPath] = await confirmFolderId(folderIdByPath[folderPath]).catch((err) => {
+      if (err.code === 404) { // stale cache; clean-up and continue
         return null
       }
 
       throw err
     })
+  }
 
-    if (byId) {
-      return folderIdByPath[folderPath]
-    }
-
-    folderIdByPath[folderPath] = null
+  if (folderIdByPath[folderPath]) {
+    return folderIdByPath[folderPath]
   }
 
   const {dir, base} = path.parse(folderPath)
@@ -42,14 +40,10 @@ export async function ensureFolder(folderPath, share = null) {
     await ensureFolder(dir)
   }
 
-  const byName = await getByName(base, dir, true)
+  folderIdByPath[folderPath] = await getIdByName(base, dir, true)
 
-  if (byName) {
-    const id = byName.id
-
-    folderIdByPath[folderPath] = id
-
-    return id
+  if (folderIdByPath[folderPath]) {
+    return folderIdByPath[folderPath]
   }
 
   const folderId = await createFolder(folderPath, share)
@@ -59,13 +53,13 @@ export async function ensureFolder(folderPath, share = null) {
 
 export async function upsertFile(name, folder, content) {
   const folderId = await ensureFolder(folder)
-  const byName = await getByName(name, folder)
+  const fileIdByName = await getIdByName(name, folder)
 
   let file
 
-  if (byName) {
+  if (fileIdByName) {
     file = await drive.files.update({
-      fileId: byName.id,
+      fileId: fileIdByName,
       resource: {
         name,
       },
@@ -131,21 +125,15 @@ async function createFolder(folderPath, share = null) {
   return folderId
 }
 
-async function getById(id, expectFolder = false) {
+async function confirmFolderId(id) {
   const res = await drive.files.get({
     fileId: id,
   })
 
-  const isFolder = res.data.mimeType === FOLDER_MIME_TYPE
-
-  if (isFolder !== expectFolder) {
-    return null
-  }
-
-  return res.data
+  return res.data && res.data.id
 }
 
-async function getByName(name, path, isFolder = false) {
+async function getIdByName(name, path, isFolder = false) {
   let parentId = null
 
   if (path) {
@@ -161,5 +149,5 @@ async function getByName(name, path, isFolder = false) {
     orderBy: 'modifiedByMeTime desc',
   })
 
-  return res.data.files[0]
+  return res.data.files[0] && res.data.files[0].id
 }
