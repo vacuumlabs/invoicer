@@ -6,7 +6,7 @@ const DEFAULT_PERM_ROLE = 'writer'
 
 const drive = google.drive('v3')
 
-const foldersMap = {}
+const folderIdByPath = {}
 
 export async function init() {
   const auth = await google.auth.getClient({
@@ -19,8 +19,8 @@ export async function init() {
 }
 
 export async function ensureFolder(path, share = null) {
-  if (foldersMap[path]) {
-    const byId = await getById(foldersMap[path], true).catch((err) => {
+  if (folderIdByPath[path]) {
+    const byId = await getById(folderIdByPath[path], true).catch((err) => {
       if (err.code === 404) { // stale cache
         return null
       }
@@ -29,10 +29,10 @@ export async function ensureFolder(path, share = null) {
     })
 
     if (byId) {
-      return foldersMap[path]
+      return folderIdByPath[path]
     }
 
-    foldersMap[path] = null
+    folderIdByPath[path] = null
   }
 
   const pathData = parsePath(path)
@@ -46,7 +46,7 @@ export async function ensureFolder(path, share = null) {
   if (byName) {
     const id = byName.id
 
-    foldersMap[path] = id
+    folderIdByPath[path] = id
 
     return id
   }
@@ -106,7 +106,7 @@ async function createFolder(path, share = null) {
   const pathData = parsePath(path)
 
   if (pathData.folder) {
-    parentId = foldersMap[pathData.folder] // caller must ensure that parent exists
+    parentId = folderIdByPath[pathData.folder] // caller must ensure that parent exists
   }
 
   const res = await drive.files.create({
@@ -119,7 +119,7 @@ async function createFolder(path, share = null) {
 
   const folderId = res.data.id
 
-  foldersMap[path] = folderId
+  folderIdByPath[path] = folderId
 
   if (share) {
     share.split(',').map(async (shareData) => {
@@ -158,7 +158,7 @@ async function getByName(name, path, isFolder = false) {
   let parentId = null
 
   if (path) {
-    parentId = foldersMap[path]
+    parentId = folderIdByPath[path]
 
     if (!parentId) {
       return null
