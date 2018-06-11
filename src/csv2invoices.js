@@ -34,7 +34,7 @@ export function csv2invoices(csv) {
       row.VATSum += VAT
       row.fullCostSum += fullCost
     }
-    row.isCreditNote = parseFloat(row.invoiceNumber) < 0
+    row.isCreditNote = row.fullCostSum < 0
     return row
   })
 }
