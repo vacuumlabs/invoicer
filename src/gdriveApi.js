@@ -1,3 +1,4 @@
+import path from 'path'
 import {google} from 'googleapis'
 
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
@@ -18,9 +19,9 @@ export async function init() {
   })
 }
 
-export async function ensureFolder(path, share = null) {
-  if (folderIdByPath[path]) {
-    const byId = await getById(folderIdByPath[path], true).catch((err) => {
+export async function ensureFolder(folderPath, share = null) {
+  if (folderIdByPath[folderPath]) {
+    const byId = await getById(folderIdByPath[folderPath], true).catch((err) => {
       if (err.code === 404) { // stale cache
         return null
       }
@@ -29,29 +30,29 @@ export async function ensureFolder(path, share = null) {
     })
 
     if (byId) {
-      return folderIdByPath[path]
+      return folderIdByPath[folderPath]
     }
 
-    folderIdByPath[path] = null
+    folderIdByPath[folderPath] = null
   }
 
-  const pathData = parsePath(path)
+  const {dir, base} = path.parse(folderPath)
 
-  if (pathData.folder) {
-    await ensureFolder(pathData.folder)
+  if (dir) {
+    await ensureFolder(dir)
   }
 
-  const byName = await getByName(pathData.name, pathData.folder, true)
+  const byName = await getByName(base, dir, true)
 
   if (byName) {
     const id = byName.id
 
-    folderIdByPath[path] = id
+    folderIdByPath[folderPath] = id
 
     return id
   }
 
-  const folderId = await createFolder(path, share)
+  const folderId = await createFolder(folderPath, share)
 
   return folderId
 }
@@ -90,28 +91,18 @@ export async function upsertFile(name, folder, content) {
   }
 }
 
-function parsePath(path) {
-  const slashIndex = path.lastIndexOf('/')
-  const hasSlash = slashIndex !== -1
-
-  return {
-    name: hasSlash ? path.substring(slashIndex + 1) : path,
-    folder: hasSlash ? path.substring(0, slashIndex) : '',
-  }
-}
-
-async function createFolder(path, share = null) {
+async function createFolder(folderPath, share = null) {
   let parentId = null
 
-  const pathData = parsePath(path)
+  const {dir, base} = path.parse(folderPath)
 
-  if (pathData.folder) {
-    parentId = folderIdByPath[pathData.folder] // caller must ensure that parent exists
+  if (dir) {
+    parentId = folderIdByPath[dir] // caller must ensure that parent exists
   }
 
   const res = await drive.files.create({
     resource: {
-      name: pathData.name,
+      name: base,
       mimeType: FOLDER_MIME_TYPE,
       parents: [parentId].filter(Boolean),
     },
@@ -119,7 +110,7 @@ async function createFolder(path, share = null) {
 
   const folderId = res.data.id
 
-  folderIdByPath[path] = folderId
+  folderIdByPath[folderPath] = folderId
 
   if (share) {
     share.split(',').map(async (shareData) => {
