@@ -35,6 +35,11 @@ export function csv2invoices(csv) {
       row.fullCostSum += fullCost
     }
     row.isCreditNote = row.fullCostSum < 0
+    if (row.isCreditNote) {
+      const cnInvoicePrefix = row.invoicePrefix.replace(/^[A-Z]+/, 'VAT')
+      const cnInvoiceNumber = (parseInt(row.invoiceNumber, 10) - 2).toString().padStart(row.invoiceNumber.length, '0')
+      row.creditNoteToInvoice = `${cnInvoicePrefix}${cnInvoiceNumber}`
+    }
     return row
   })
 }

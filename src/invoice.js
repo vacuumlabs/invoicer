@@ -153,7 +153,7 @@ const template = `
 		<div id="services">
 			<table>
 				<thead><tr>
-					<th style="text-align: left;">{{#if isCreditNote}}Dobropisujeme{{else}}Fakturujeme{{/if}} vám</th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
+					<th style="text-align: left;">{{#if isCreditNote}}Dobropisujeme vám ku faktúre č. {{creditNoteToInvoice}}{{else}}Fakturujeme vám{{/if}}</th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
 				</tr></thead>
 				<tbody>{{#services}}<tr>
           <td style="width:50%;text-align: left;">{{name}}</td>
