@@ -13,7 +13,7 @@ export async function saveInvoice(invoice, stream) {
 
   await ensureFolder(userFolder, invoice.email || `${invoice.user}@vacuumlabs.com`)
 
-  const name = `${invoice.user}-${invoice.invoiceNumber}.pdf`
+  const name = `${invoice.user}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
   const year = invoice.paymentDate.split('-')[0]
   const folder = `${userFolder}/${year}`
 

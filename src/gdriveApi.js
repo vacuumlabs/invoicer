@@ -30,23 +30,19 @@ export async function ensureFolder(folderPath, share = null) {
     })
   }
 
-  if (folderIdByPath[folderPath]) {
-    return folderIdByPath[folderPath]
-  }
+  if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
 
   const {dir, base} = path.parse(folderPath)
 
-  if (dir) {
-    await ensureFolder(dir)
-  }
+  if (dir !== '') await ensureFolder(dir)
 
   folderIdByPath[folderPath] = await getIdByName(base, dir, true)
 
-  if (folderIdByPath[folderPath]) {
-    return folderIdByPath[folderPath]
-  }
+  if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
 
   const folderId = await createFolder(folderPath, share)
+
+  folderIdByPath[folderPath] = folderId
 
   return folderId
 }
@@ -55,29 +51,27 @@ export async function upsertFile(name, folder, content) {
   const folderId = await ensureFolder(folder)
   const fileIdByName = await getIdByName(name, folder)
 
-  let file
-
-  if (fileIdByName) {
-    file = await drive.files.update({
-      fileId: fileIdByName,
-      resource: {
-        name,
-      },
-      media: {
-        body: content,
-      },
-    })
-  } else {
-    file = await drive.files.create({
-      resource: {
-        name,
-        parents: [folderId],
-      },
-      media: {
-        body: content,
-      },
-    })
-  }
+  const file = await (
+    fileIdByName
+      ? drive.files.update({
+        fileId: fileIdByName,
+        resource: {
+          name,
+        },
+        media: {
+          body: content,
+        },
+      })
+      : drive.files.create({
+        resource: {
+          name,
+          parents: [folderId],
+        },
+        media: {
+          body: content,
+        },
+      })
+  )
 
   return {
     name,
@@ -86,25 +80,19 @@ export async function upsertFile(name, folder, content) {
 }
 
 async function createFolder(folderPath, share = null) {
-  let parentId = null
-
   const {dir, base} = path.parse(folderPath)
 
-  if (dir) {
-    parentId = folderIdByPath[dir] // caller must ensure that parent exists
-  }
+  const parentId = dir === '' ? null : folderIdByPath[dir] // caller must ensure that parent exists
 
   const res = await drive.files.create({
     resource: {
       name: base,
       mimeType: FOLDER_MIME_TYPE,
-      parents: [parentId].filter(Boolean),
+      parents: parentId ? [parentId] : [],
     },
   })
 
   const folderId = res.data.id
-
-  folderIdByPath[folderPath] = folderId
 
   if (share) {
     share.split(',').map(async (shareData) => {
@@ -133,16 +121,10 @@ async function confirmFolderId(id) {
   return res.data && res.data.id
 }
 
-async function getIdByName(name, path, isFolder = false) {
-  let parentId = null
+async function getIdByName(name, parentPath, isFolder = false) {
+  const parentId = parentPath && folderIdByPath[parentPath]
 
-  if (path) {
-    parentId = folderIdByPath[path]
-
-    if (!parentId) {
-      return null
-    }
-  }
+  if (parentPath && !parentId) return null
 
   const res = await drive.files.list({
     q: `mimeType ${isFolder ? '=' : '!='} '${FOLDER_MIME_TYPE}' and name = '${name}'${parentId ? ` and '${parentId}' in parents` : ''}`,

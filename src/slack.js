@@ -140,7 +140,7 @@ async function sendInvoiceToUser(invoice, comment) {
 
     await apiCall(apiState, 'chat.postMessage', {
       channel: channelId,
-      text: comment.replace('_link_', `<${fileData.url}|${invoice.user}-${invoice.invoiceNumber}.pdf>`),
+      text: comment.replace('_link_', `<${fileData.url}|${fileData.name}.pdf>`),
     })
 
     return true
