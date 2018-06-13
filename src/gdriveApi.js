@@ -1,5 +1,6 @@
 import path from 'path'
 import {google} from 'googleapis'
+import _ from 'lodash'
 
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 const DEFAULT_PERM_TYPE = 'user'
@@ -21,13 +22,7 @@ export async function init() {
 
 export async function ensureFolder(folderPath, share = null) {
   if (folderIdByPath[folderPath]) {
-    folderIdByPath[folderPath] = await confirmFolderId(folderIdByPath[folderPath]).catch((err) => {
-      if (err.code === 404) { // stale cache; clean-up and continue
-        return null
-      }
-
-      throw err
-    })
+    folderIdByPath[folderPath] = await confirmFolderId(folderIdByPath[folderPath])
   }
 
   if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
@@ -95,10 +90,10 @@ async function createFolder(folderPath, share = null) {
   const folderId = res.data.id
 
   if (share) {
-    share.split(',').map(async (shareData) => {
+    await Promise.all(share.split(',').map((shareData) => {
       const [emailAddress, type, role] = shareData.split(':')
 
-      await drive.permissions.create({
+      return drive.permissions.create({
         fileId: folderId,
         transferOwnership: role === 'owner',
         requestBody: {
@@ -107,7 +102,7 @@ async function createFolder(folderPath, share = null) {
           emailAddress,
         },
       })
-    })
+    }))
   }
 
   return folderId
@@ -116,9 +111,15 @@ async function createFolder(folderPath, share = null) {
 async function confirmFolderId(id) {
   const res = await drive.files.get({
     fileId: id,
+  }).catch((err) => {
+    if (err.code === 404) {
+      return null
+    }
+
+    throw err
   })
 
-  return res.data && res.data.id
+  return _.get(res, 'data.id')
 }
 
 async function getIdByName(name, parentPath, isFolder = false) {
@@ -131,5 +132,5 @@ async function getIdByName(name, parentPath, isFolder = false) {
     orderBy: 'modifiedByMeTime desc',
   })
 
-  return res.data.files[0] && res.data.files[0].id
+  return _.get(res, 'data.files[0].id')
 }
