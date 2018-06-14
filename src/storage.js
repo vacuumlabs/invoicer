@@ -11,7 +11,7 @@ export async function initStorage(adminEmails) {
 export async function saveInvoice(invoice, stream) {
   const userFolder = `${BASE_FOLDER}/${invoice.user}/${USER_FOLDER}`
 
-  await ensureFolder(userFolder, invoice.email)
+  await ensureFolder(userFolder, `${invoice.email}:anyone`)
 
   const name = `${invoice.user}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
   const year = invoice.paymentDate.split('-')[0]

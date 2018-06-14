@@ -1,7 +1,7 @@
 import parse from 'csv-parse/lib/sync'
 
 const columns = [
-  'email', 'user', 'slackId', 'invoicePrefix', 'invoiceNumber', 'relatedInvoice', 'vendorName',
+  'user', 'slackId', 'email', 'invoicePrefix', 'invoiceNumber', 'relatedInvoice', 'vendorName',
   'vendorStreet', 'vendorCity', 'vendorZip', 'vendorCountry', 'vendorID', 'vendorTaxID',
   'vendorVAT', 'vendorVATPayer', 'vendorIBAN', 'vendorBIC', 'clientName',
   'clientStreet', 'clientCity', 'clientZip', 'clientCountry', 'clientID', 'clientTaxID',

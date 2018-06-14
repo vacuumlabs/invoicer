@@ -4,7 +4,7 @@ import _ from 'lodash'
 
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 const DEFAULT_PERM_TYPE = 'user'
-const DEFAULT_PERM_ROLE = 'writer'
+const DEFAULT_PERM_ROLE = 'reader'
 
 const drive = google.drive('v3')
 
@@ -56,6 +56,7 @@ export async function upsertFile(name, folder, content) {
         media: {
           body: content,
         },
+        fields: 'id,webViewLink',
       })
       : drive.files.create({
         resource: {
@@ -65,12 +66,13 @@ export async function upsertFile(name, folder, content) {
         media: {
           body: content,
         },
+        fields: 'id,webViewLink',
       })
   )
 
   return {
     name,
-    url: `https://drive.google.com/file/d/${file.data.id}/view`,
+    url: file.data.webViewLink || `https://drive.google.com/open?id=${file.data.id}`,
   }
 }
 
@@ -90,19 +92,28 @@ async function createFolder(folderPath, share = null) {
   const folderId = res.data.id
 
   if (share) {
-    await Promise.all(share.split(',').map((shareData) => {
+    await shareItem(folderId, share.split(',').reduce((acc, shareData) => {
       const [emailAddress, type, role] = shareData.split(':')
 
-      return drive.permissions.create({
-        fileId: folderId,
-        transferOwnership: role === 'owner',
-        requestBody: {
+      if (type === 'anyone') {
+        acc.push({ // sends email with invitation
+          role: role || DEFAULT_PERM_ROLE,
+          type: DEFAULT_PERM_TYPE,
+          emailAddress,
+        }, { // enables reading by link
+          role: 'reader',
+          type,
+        })
+      } else {
+        acc.push({
           role: role || DEFAULT_PERM_ROLE,
           type: type || DEFAULT_PERM_TYPE,
           emailAddress,
-        },
-      })
-    }))
+        })
+      }
+
+      return acc
+    }, []))
   }
 
   return folderId
@@ -133,4 +144,20 @@ async function getIdByName(name, parentPath, isFolder = false) {
   })
 
   return _.get(res, 'data.files[0].id')
+}
+
+async function shareItem(id, shareData) {
+  for (let i = 0; i < shareData.length; i++) {
+    const {role, type, emailAddress} = shareData[i]
+
+    await drive.permissions.create({
+      fileId: id,
+      transferOwnership: role === 'owner',
+      requestBody: {
+        role,
+        type,
+        emailAddress,
+      },
+    })
+  }
 }
