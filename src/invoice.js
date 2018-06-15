@@ -113,7 +113,7 @@ const template = `
 
   </style>
   <body>
-    <h1>Faktúra {{invoicePrefix}}{{invoiceNumber}}</h1>
+    <h1>{{#if isCreditNote}}Dobropis{{else}}Faktúra{{/if}} {{invoicePrefix}}{{invoiceNumber}}</h1>
     <div id="main">
       <div>
         <h2>Dodávateľ</h2>
@@ -153,7 +153,10 @@ const template = `
 		<div id="services">
 			<table>
 				<thead><tr>
-					<th style="text-align: left;">Fakturujeme vám</th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
+          <th style="text-align: left;">
+            {{#if isCreditNote}}Dobropisujeme vám{{#if relatedInvoice}} ku faktúre č. {{relatedInvoice}}{{/if}}
+            {{else}}Fakturujeme vám{{/if}}
+          </th><th>Základ dane</th><th>% DPH</th><th>DPH</th><th>Celkom</th>
 				</tr></thead>
 				<tbody>{{#services}}<tr>
           <td style="width:50%;text-align: left;">{{name}}</td>
@@ -172,9 +175,9 @@ const template = `
 			</table>
 		</div>
 		<div id="notes">
-			{{#incomingInvoice}}<div>vyhotovenie faktúry odberateľom</div>{{/incomingInvoice}}
+			{{#incomingInvoice}}<div>vyhotovenie {{#if isCreditNote}}dobropisu{{else}}faktúry{{/if}} odberateľom</div>{{/incomingInvoice}}
 			{{^vendorVATPayer}}<div>dodávateľ nie je platcom DPH</div>{{/vendorVATPayer}}
-      {{^domestic}}<div>Faktúra je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.</div>{{/domestic}}
+      {{^domestic}}<div>{{#if isCreditNote}}Dobropis{{else}}Faktúra{{/if}} je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.</div>{{/domestic}}
       {{#if note}}<div>{{note}}</div>{{/if}}
 		</div>
 

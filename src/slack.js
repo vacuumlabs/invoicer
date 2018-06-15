@@ -8,6 +8,7 @@ import renderInvoice from './invoice'
 import pdf from 'html-pdf'
 import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
+import {saveInvoice} from './storage'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -55,7 +56,6 @@ async function cancelInvoices(ts) {
   await showError(apiState, c.invoicingChannel, 'Invoices canceled', ts)
 }
 
-
 async function handleInvoicesAction(event) {
   const {channel, ts, message: {attachments: [attachment]}} =
     pendingInvoice.confirmation
@@ -72,7 +72,7 @@ async function handleInvoicesAction(event) {
       color: 'good',
       actions: [],
     })
-    await sendInvoices(pendingInvoice.invoices)
+    await sendInvoices(pendingInvoice.invoices, pendingInvoice.comment)
       .catch((e) => showError(apiState, event.channel.id, 'Something went wrong.'))
 
     await apiCall(apiState, 'chat.update', {
@@ -95,25 +95,23 @@ async function getChannelForUserID(userID) {
   }
 }
 
-function sendPdf(htmlInvoice, fileName, channelId) {
-  pdf
-    .create(htmlInvoice, {format: 'A4'})
-    .toBuffer((err, buffer) => {
-      if (err) logger.warn('PDF conversion failed')
-      const formData = {
-        filename: fileName,
-        channels: channelId,
-        initial_comment: 'Your monthly invoice from VacuumLabs:',
-        file: {
-          value: buffer,
-          options: {
-            filename: fileName,
-            contentType: 'application/pdf',
-          },
-        },
-      }
-      apiCallMultipart(apiState, 'files.upload', formData)
-    })
+async function sendPdf(htmlInvoice, invoice) {
+  const stream = await new Promise((resolve, reject) => {
+    pdf
+      .create(htmlInvoice, {format: 'A4'})
+      .toStream((err, stream) => {
+        if (err) {
+          logger.warn('PDF conversion failed')
+          return reject(err)
+        }
+
+        return resolve(stream)
+      })
+  })
+
+  const fileData = await saveInvoice(invoice, stream)
+
+  return fileData
 }
 
 async function sendXML(invoices, title, name) {
@@ -134,23 +132,33 @@ async function sendXML(invoices, title, name) {
   })
 }
 
-async function sendInvoiceToUser(invoice) {
+async function sendInvoiceToUser(invoice, comment) {
   const channelId = await getChannelForUserID(invoice.slackId)
   if (channelId) {
     const htmlInvoice = renderInvoice(invoice)
-    sendPdf(htmlInvoice, `${invoice.user}-${invoice.invoiceNumber}.pdf`, channelId)
+    const fileData = await sendPdf(htmlInvoice, invoice)
+
+    await apiCall(apiState, 'chat.postMessage', {
+      channel: channelId,
+      text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
+    })
+
     return true
   } else {
     return false
   }
 }
 
-async function sendInvoices(invoices) {
+async function sendInvoices(invoices, comment) {
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
   for (const i of invoices) {
-    const success = await sendInvoiceToUser(i)
+    const success = await sendInvoiceToUser(i, comment).catch((err) => {
+      logger.warn('Failed to send invoice', err)
+      return false
+    })
+
     if (success) {
       count++
     } else {
@@ -233,5 +241,6 @@ async function handleCSVUpload(event) {
     id: event.ts,
     invoices,
     confirmation,
+    comment: (event.file.initial_comment && event.file.initial_comment.comment) || 'Your monthly invoice from VacuumLabs: _link_',
   }
 }

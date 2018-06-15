@@ -5,6 +5,7 @@ import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
 import renderInvoice from './invoice'
 import {listenSlack} from './slack'
+import {initStorage} from './storage'
 import pdf from 'html-pdf'
 import {routes as r, shortNames} from './routes'
 
@@ -96,7 +97,10 @@ register(app, 'get', r.invoice, invoice)
     logger.log('info', `App started on localhost:${c.port}.`)
   )
 
-  await listenSlack(c.slack.botToken, slackEvents)
+  await Promise.all([
+    initStorage(c.adminEmails),
+    listenSlack(c.slack.botToken, slackEvents),
+  ])
 
 })().catch((e) => {
   logger.log('error', e)

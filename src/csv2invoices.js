@@ -1,7 +1,7 @@
 import parse from 'csv-parse/lib/sync'
 
 const columns = [
-  'user', 'slackId', 'invoicePrefix', 'invoiceNumber', 'vendorName',
+  'user', 'slackId', 'email', 'invoicePrefix', 'invoiceNumber', 'relatedInvoice', 'vendorName',
   'vendorStreet', 'vendorCity', 'vendorZip', 'vendorCountry', 'vendorID', 'vendorTaxID',
   'vendorVAT', 'vendorVATPayer', 'vendorIBAN', 'vendorBIC', 'clientName',
   'clientStreet', 'clientCity', 'clientZip', 'clientCountry', 'clientID', 'clientTaxID',
@@ -34,6 +34,7 @@ export function csv2invoices(csv) {
       row.VATSum += VAT
       row.fullCostSum += fullCost
     }
+    row.isCreditNote = row.fullCostSum < 0
     return row
   })
 }
