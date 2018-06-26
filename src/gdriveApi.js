@@ -11,6 +11,8 @@ const drive = google.drive('v3')
 const folderIdByPath = {}
 
 export async function init() {
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(process.cwd(), 'googleSecret.json')
+
   const auth = await google.auth.getClient({
     scopes: ['https://www.googleapis.com/auth/drive'],
   })
