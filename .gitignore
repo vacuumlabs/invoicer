@@ -58,4 +58,7 @@ typings/
 .env
 .env.prod
 
+# Secrets
+googleSecret.json
+
 dist
