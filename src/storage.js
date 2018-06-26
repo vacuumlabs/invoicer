@@ -1,15 +1,21 @@
 import {init, ensureFolder, upsertFile} from './gdriveApi'
 
-const BASE_FOLDER = 'Invoices'
-const USER_FOLDER = 'VL Invoices'
+const config = {
+  rootFolder: '',
+  userFolder: '',
+}
 
-export async function initStorage(adminEmails) {
+export async function initStorage(adminEmails, _config) {
+  config.rootFolder = _config.rootFolder
+  config.userFolder = _config.userFolder
+  Object.freeze(config)
+
   await init()
-  await ensureFolder(BASE_FOLDER, adminEmails)
+  await ensureFolder(config.rootFolder, adminEmails)
 }
 
 export async function saveInvoice(invoice, stream) {
-  const userFolder = `${BASE_FOLDER}/${invoice.user}/${USER_FOLDER}`
+  const userFolder = `${config.rootFolder}/${invoice.user}/${config.userFolder}`
 
   await ensureFolder(userFolder, `${invoice.email}:anyone`)
 

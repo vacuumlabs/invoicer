@@ -14,5 +14,9 @@ export default transenv()(({str, bool, num}) => {
     },
     pohodaImportID: str('pohoda_import_id'),
     adminEmails: str('admin_emails'),
+    storage: {
+      rootFolder: str('storage_root_folder'),
+      userFolder: str('storage_user_folder'),
+    },
   }
 })
