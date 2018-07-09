@@ -98,7 +98,7 @@ register(app, 'get', r.invoice, invoice)
   )
 
   await Promise.all([
-    initStorage(c.adminEmails),
+    initStorage(c.adminEmails, c.storage),
     listenSlack(c.slack.botToken, slackEvents),
   ])
 

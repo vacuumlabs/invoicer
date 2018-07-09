@@ -119,7 +119,7 @@ const template = `
         <h2>Dodávateľ</h2>
 				{{vendorName}}<br />
         {{vendorStreet}}<br />
-        {{vendorZIP}} {{vendorCity}}<br />
+        {{vendorZip}} {{vendorCity}}<br />
         {{vendorCountry}}
 				<dl>
 					{{#if vendorID}}<dt>IČO:</dt><dd>{{vendorID}}</dd>{{/if}}
@@ -134,7 +134,7 @@ const template = `
         <h2>Odberateľ</h2>
 				{{clientName}}<br />
         {{clientStreet}}<br />
-        {{clientZIP}} {{clientCity}}<br />
+        {{clientZip}} {{clientCity}}<br />
         {{clientCountry}}
 				<dl>
 					{{#if clientID}}<dt>IČO:</dt><dd>{{clientID}}</dd>{{/if}}

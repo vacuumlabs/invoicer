@@ -43,6 +43,7 @@ export async function listenSlack(token, stream) {
         await handleInvoicesAction(event)
         pendingInvoice = null
       } else {
+        logger.log('warn', 'pending invoice error', pendingInvoice, event.callback_id)
         await showError(apiState, event.channel.id,
           'The operation has timed out. Please, re-upload your CSV file with invoices.',
           event.original_message.ts
