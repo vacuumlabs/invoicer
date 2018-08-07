@@ -24,8 +24,9 @@ export async function listenSlack(token, stream) {
 
   const isCSVUpload = (e) => (
     e.type === 'message' &&
-    e.subtype === 'file_share' &&
-    e.file.filetype === 'csv'
+    e.files &&
+    e.files.length === 1 &&
+    e.files[0].filetype === 'csv'
   )
 
   for (;;) {
@@ -33,7 +34,7 @@ export async function listenSlack(token, stream) {
     logger.log('verbose', `slack event ${event.type}`, event)
 
     if (isCSVUpload(event) && event.channel === c.invoicingChannel) {
-      logger.verbose('csv uploaded', event.file.url_private)
+      logger.verbose('csv uploaded', event.files[0].url_private)
       handleCSVUpload(event)
       continue
     }
@@ -196,10 +197,11 @@ function formatInvoice(invoice) {
 async function handleCSVUpload(event) {
   if (pendingInvoice) await cancelInvoices(pendingInvoice.confirmation.ts)
 
-  const csv = await request.get(event.file.url_private)
+  const file = event.files[0]
+  const csv = await request.get(file.url_private)
   const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
 
-  await sendXML(invoices, event.file.title, event.file.name)
+  await sendXML(invoices, file.title, file.name)
 
   const confirmation = await apiCall(apiState, 'chat.postMessage', {
     channel: c.invoicingChannel,
@@ -242,6 +244,6 @@ async function handleCSVUpload(event) {
     id: event.ts,
     invoices,
     confirmation,
-    comment: (event.file.initial_comment && event.file.initial_comment.comment) || 'Your monthly invoice from VacuumLabs: _link_',
+    comment: event.text || 'Your monthly invoice from VacuumLabs: _link_',
   }
 }
