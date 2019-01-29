@@ -21,7 +21,7 @@ export function csv2invoices(csv) {
     const row = {services: [], preTaxCostSum: 0, VATSum: 0, fullCostSum: 0}
     for (; i < columns.length; i++) row[columns[i]] = r[i]
     for (const k of booleanColumns) row[k] = row[k].toLowerCase() === 'true'
-    for (; i < r.length; i += 3) {
+    for (; i < r.length; i += 4) {
       if (r[i] === '') break
       const preTaxCost = finRound(parseFloat(r[i + 1]))
       const VATLevel = finRound(parseFloat(r[i + 2]))
