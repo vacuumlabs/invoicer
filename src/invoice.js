@@ -160,17 +160,17 @@ const template = `
 				</tr></thead>
 				<tbody>{{#services}}<tr>
           <td style="width:50%;text-align: left;">{{name}}</td>
-          <td>{{formatNumber preTaxCost "EUR"}}</td>
+          <td>{{formatPrice preTaxCost ../currency}}</td>
           <td>{{formatNumber VATLevel style="percent"}}</td>
-          <td>{{formatNumber VAT "EUR"}}</td>
-          <td>{{formatNumber fullCost "EUR"}}</td>
+          <td>{{formatPrice VAT ../currency}}</td>
+          <td>{{formatPrice fullCost ../currency}}</td>
         </tr>{{/services}}</tbody>
         <tfoot><tr>
-          <td style="width:50%;text-align: left;">Celkom k úhrade (EUR)</td>
-          <td>{{formatNumber preTaxCostSum "EUR"}}</td>
+          <td style="width:50%;text-align: left;">Celkom k úhrade ({{currency}})</td>
+          <td>{{formatPrice preTaxCostSum currency}}</td>
           <td></td>
-          <td>{{formatNumber VATSum "EUR"}}</td>
-          <td>{{formatNumber fullCostSum "EUR"}}</td>
+          <td>{{formatPrice VATSum currency}}</td>
+          <td>{{formatPrice fullCostSum currency}}</td>
         </tr></tfoot>
 			</table>
 		</div>
@@ -184,13 +184,29 @@ const template = `
   </body>
 </html>
 `
+
+const priceFormatters = {
+  EUR: new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR',
+  }),
+  CZK: {
+    format: (value) => `${(new Intl.NumberFormat('cs')).format(value)} Kč`,
+  },
+  HUF: {
+    format: (value) => `${(new Intl.NumberFormat('hu')).format(value)} Ft`,
+  },
+}
+
+handlebars.registerHelper('formatPrice', (value, currency) => priceFormatters[currency].format(value))
+
 export default function invoice(_context) {
   const context = {..._context}
   const vat2country = (vat) => vat ? vat.substring(0, 2).toLowerCase() : 'sk'
   context.domestic = vat2country(context.vendorVAT) === vat2country(context.clientVAT)
 
   if (context.vendorID && context.vendorID.startsWith('@@')) {
-    context.vendorID = ''
+    context.vendorID = null
   }
 
   return handlebars.compile(template)(context, {data: {intl: {
