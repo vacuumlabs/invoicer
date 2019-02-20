@@ -202,8 +202,8 @@ handlebars.registerHelper('formatPrice', (value, currency) => priceFormatters[cu
 
 export default function invoice(_context) {
   const context = {..._context}
-  const vat2country = (vat) => vat ? vat.substring(0, 2).toLowerCase() : 'sk'
-  context.domestic = vat2country(context.vendorVAT) === vat2country(context.clientVAT)
+
+  context.domestic = context.vendorCountry === context.clientCountry
 
   if (context.vendorID && context.vendorID.startsWith('@@')) {
     context.vendorID = null
@@ -211,6 +211,5 @@ export default function invoice(_context) {
 
   return handlebars.compile(template)(context, {data: {intl: {
     locales: 'en-US',
-    formats: {number: {EUR: {style: 'currency', currency: 'EUR'}}},
   }}})
 }
