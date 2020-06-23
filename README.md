@@ -13,4 +13,8 @@
     - `Furnish a new private key` - yes, JSON
     - `Enable G Suite Domain-wide Delegation` - not needed
 1. [Enable Google Drive API](https://console.developers.google.com/apis/library)
-1. Upload private key with name `googleSecret.json` to the project root
+1. Set `client_email` as `google_email` and `base64(private_key)` as `google_key`
+
+## Deployment
+
+App is deployed on Heroku. Every push to `master` is automatically deployed to production.

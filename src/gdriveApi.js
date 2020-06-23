@@ -3,6 +3,7 @@ import logger from 'winston'
 import {google} from 'googleapis'
 import _ from 'lodash'
 
+
 const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder'
 const DEFAULT_PERM_TYPE = 'user'
 const DEFAULT_PERM_ROLE = 'reader'
@@ -11,17 +12,11 @@ const drive = google.drive('v3')
 
 const folderIdByPath = {}
 
-export async function init() {
+export async function init(config) {
   logger.log('verbose', 'gdrive - init')
 
-  process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(process.cwd(), 'googleSecret.json')
-
-  const auth = await google.auth.getClient({
-    scopes: ['https://www.googleapis.com/auth/drive'],
-  }).catch((err) => {
-    logger.log('error', 'gdrive - init', err)
-    throw err
-  })
+  const key = Buffer.from(config.key, 'base64').toString()
+  const auth = new google.auth.JWT(config.email, null, key, ['https://www.googleapis.com/auth/drive'])
 
   google.options({
     auth,

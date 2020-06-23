@@ -18,5 +18,9 @@ export default transenv()(({str, bool, num}) => {
       rootFolder: str('storage_root_folder'),
       userFolder: str('storage_user_folder'),
     },
+    google: {
+      email: str('google_email'),
+      key: str('google_key'),
+    },
   }
 })
