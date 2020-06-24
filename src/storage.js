@@ -6,14 +6,14 @@ const config = {
   userFolder: '',
 }
 
-export async function initStorage(adminEmails, _config) {
+export async function initStorage(adminEmails, _config, google) {
   logger.log('verbose', 'storage - initStorage')
 
   config.rootFolder = _config.rootFolder
   config.userFolder = _config.userFolder
   Object.freeze(config)
 
-  await init()
+  await init(google)
   await ensureFolder(config.rootFolder, adminEmails)
 
   logger.log('verbose', 'storage - initStorage - done')

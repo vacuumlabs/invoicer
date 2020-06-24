@@ -89,7 +89,7 @@ async function handleInvoicesAction(event) {
 }
 
 async function getChannelForUserID(userID) {
-  const channel = await apiCall(apiState, 'im.open', {user: userID})
+  const channel = await apiCall(apiState, 'conversations.open', {users: userID})
   if (channel.ok) {
     return (channel.channel.id)
   } else {
