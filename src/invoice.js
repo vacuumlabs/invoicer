@@ -175,8 +175,8 @@ const template = `
 			</table>
 		</div>
 		<div id="notes">
-			{{#incomingInvoice}}<div>vyhotovenie {{#if isCreditNote}}dobropisu{{else}}faktúry{{/if}} odberateľom</div>{{/incomingInvoice}}
-			{{^vendorVATPayer}}<div>dodávateľ nie je platcom DPH</div>{{/vendorVATPayer}}
+			{{#incomingInvoice}}<div>Vyhotovenie {{#if isCreditNote}}dobropisu{{else}}faktúry{{/if}} odberateľom</div>{{/incomingInvoice}}
+			{{^vendorVATPayer}}<div>Dodávateľ nie je platcom DPH podľa § 4 zákona o DPH č. 222/2004 Z.z.</div>{{/vendorVATPayer}}
       {{^domestic}}<div>{{#if isCreditNote}}Dobropis{{else}}Faktúra{{/if}} je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.</div>{{/domestic}}
       {{#if note}}<div>{{note}}</div>{{/if}}
 		</div>
