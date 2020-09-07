@@ -33,7 +33,7 @@
     "csv-parse": "^4.4.6",
     "express": "^4.15.3",
     "full-icu": "^1.2.1",
-    "googleapis": "^31.0.2",
+    "googleapis": "^39.1.0",
     "handlebars": "^4.5.3",
     "handlebars-intl": "^1.1.2",
     "html-pdf": "^2.2.0",
