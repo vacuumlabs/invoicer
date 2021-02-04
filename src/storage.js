@@ -1,25 +1,17 @@
 import logger from 'winston'
 import {init, ensureFolder, upsertFile} from './gdriveApi'
 
-const config = {
-  rootFolder: '',
-  userFolder: '',
-}
 
-export async function initStorage(adminEmails, _config, google) {
+export async function initStorage(config, google) {
   logger.log('verbose', 'storage - initStorage')
 
-  config.rootFolder = _config.rootFolder
-  config.userFolder = _config.userFolder
-  Object.freeze(config)
-
   await init(google)
-  await ensureFolder(config.rootFolder, adminEmails)
+  await ensureFolder(config.rootFolder, config.adminEmails)
 
   logger.log('verbose', 'storage - initStorage - done')
 }
 
-export async function saveInvoice(invoice, stream) {
+export async function saveInvoice(invoice, stream, config) {
   logger.log('verbose', 'storage - saveInvoice', invoice.user)
 
   const userFolder = `${config.rootFolder}/${invoice.user}/${config.userFolder}`

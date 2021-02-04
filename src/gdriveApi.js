@@ -58,25 +58,25 @@ export async function upsertFile(name, folder, content) {
   const file = await (
     fileIdByName
       ? drive.files.update({
-        fileId: fileIdByName,
-        resource: {
-          name,
-        },
-        media: {
-          body: content,
-        },
-        fields: 'id,webViewLink',
-      })
+          fileId: fileIdByName,
+          resource: {
+            name,
+          },
+          media: {
+            body: content,
+          },
+          fields: 'id,webViewLink',
+        })
       : drive.files.create({
-        resource: {
-          name,
-          parents: [folderId],
-        },
-        media: {
-          body: content,
-        },
-        fields: 'id,webViewLink',
-      })
+          resource: {
+            name,
+            parents: [folderId],
+          },
+          media: {
+            body: content,
+          },
+          fields: 'id,webViewLink',
+        })
   ).catch((err) => {
     logger.log('error', 'gdrive - upsertFile', err)
     throw err
@@ -111,7 +111,7 @@ async function createFolder(folderPath, share = null) {
   const folderId = res.data.id
 
   if (share) {
-    await shareItem(folderId, share.split(',').reduce((acc, shareData) => {
+    await shareItem(folderId, share.split('+').reduce((acc, shareData) => {
       const [emailAddress, type, role] = shareData.split(':')
 
       if (type === 'anyone') {
