@@ -20,7 +20,7 @@ export async function saveInvoice(invoice, stream, config) {
 
   const name = `${invoice.user}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
   const year = invoice.paymentDate.split('-')[0]
-  const folder = `${userFolder}/${year}`
+  const folder = `${userFolder}${config.groupByYear ? `/${year}` : ''}`
 
   const fileData = await upsertFile(name, folder, stream)
 

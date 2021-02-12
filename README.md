@@ -7,6 +7,8 @@
   - **storage root folder** - name of root folder where all invoices will be stored. Can be path with separator `/`
   - **storage user folder** - name of user folder where invoices of specific user are stored. This folder will be shared with the user. The name will be prepended with `<storage-root-folder>/<user-name>` and subfolders by year containing the invoices. Can be path with separator `/`
   - **admin emails** - list of admin emails separated by `+`. Base GDrive folder will be shared with these emails. Optionally can contain also type of account (user, group) and role (reader, writer, owner, commenter). Example: *fero@vacuumlabs.com:user:reader+finance@vacuumlabs.com:group:owner*. Default type: *user*, default role: *reader*. Only one admin can be owner
+  - **sendOnSlack** - 0/1 - send notification to invoice recipient on slack
+  - **groupByYear** - 0/1 - group invoices on gdrive by year
 
 ## Google Drive API
 

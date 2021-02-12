@@ -6,11 +6,11 @@ export default transenv()(({str, bool, num}) => {
   const bots = str('bots_config').split(';').reduce((acc, botData) => {
     const fields = botData.split(',')
 
-    if (fields.length !== 5) {
+    if (fields.length !== 6) {
       throw new Error(`Invalid bot config - ${botData}`)
     }
 
-    const [channel, storageRootFolder, storageUserFolder, adminEmails, sendOnSlack] = fields
+    const [channel, storageRootFolder, storageUserFolder, adminEmails, sendOnSlack, groupByYear] = fields
 
     acc[channel] = {
       channel,
@@ -18,8 +18,9 @@ export default transenv()(({str, bool, num}) => {
         adminEmails,
         rootFolder: storageRootFolder,
         userFolder: storageUserFolder,
+        groupByYear: groupByYear && groupByYear === '1',
       },
-      sendOnSlack: sendOnSlack && sendOnSlack !== "0",
+      sendOnSlack: sendOnSlack && sendOnSlack === '1',
     }
 
     return acc
