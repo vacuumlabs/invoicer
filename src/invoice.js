@@ -37,7 +37,6 @@ const template = `
       width: 30%;
     }
 
-
 		#services {
 			padding: 6px 0px 6px 12px;
 			border-bottom: 1px solid black;
@@ -46,7 +45,6 @@ const template = `
 		#notes {
 			padding-left: 12px;
 			font-style: italic;
-			text-align: right;
 		}
 
     #freeNote {
