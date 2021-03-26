@@ -205,7 +205,7 @@ function formatInvoice(invoice) {
   const direction = invoice.incomingInvoice ? '⟹' : '⟸'
   const id = store(invoice)
   const url = `${c.host}${r.invoice}?${querystring.stringify({id})}`
-  return `${date} ${cost} ${user} ${partner} ${direction} <${url}|📩>`
+  return `${date} ${cost} ${user} ${partner} ${direction} <${`${url}&lang=SK`}|📩 SK> <${`${url}&lang=EN`}|📩 EN>`
 }
 
 async function handleCSVUpload(event, bot, botPendingInvoice) {

@@ -74,7 +74,7 @@ function* actions(req, res) {
 function* invoice(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
-    const htmlInvoice = renderInvoice(query2invoice(req.query)/*exampleQuery*/)
+    const htmlInvoice = renderInvoice(query2invoice(req.query), req.query.lang)
     pdf
       .create(htmlInvoice, {format: 'A4'})
       .toBuffer((err, buffer) => {

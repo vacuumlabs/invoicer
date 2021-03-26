@@ -297,7 +297,7 @@ export default function invoice(_context, language) {
     context.vendorID = null
   }
 
-  context.texts = texts[language]
+  context.texts = texts[language] || texts.SK
 
   return handlebars.compile(template)(context, {data: {intl: {
     locales: 'en-US',
