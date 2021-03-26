@@ -83,7 +83,7 @@ async function handleInvoicesAction(event, bot, botPendingInvoice) {
       color: 'good',
       actions: [],
     })
-    await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, bot)
+    await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, event.actions[0].value, bot)
       .catch((e) => showError(apiState, channel, 'Something went wrong.'))
 
     await apiCall(apiState, 'chat.update', {
@@ -143,8 +143,8 @@ async function sendXML(invoices, title, name, bot) {
   })
 }
 
-async function sendInvoiceToUser(invoice, comment, bot) {
-  const htmlInvoice = renderInvoice(invoice)
+async function sendInvoiceToUser(invoice, comment, language, bot) {
+  const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
 
   if (!bot.sendOnSlack) {
@@ -165,12 +165,12 @@ async function sendInvoiceToUser(invoice, comment, bot) {
   }
 }
 
-async function sendInvoices(invoices, comment, bot) {
+async function sendInvoices(invoices, comment, language, bot) {
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
   for (const i of invoices) {
-    const success = await sendInvoiceToUser(i, comment, bot).catch((err) => {
+    const success = await sendInvoiceToUser(i, comment, language, bot).catch((err) => {
       logger.warn('Failed to send invoice', err)
       return false
     })
@@ -239,10 +239,21 @@ async function handleCSVUpload(event, bot, botPendingInvoice) {
             name: 'send',
             text: `Send ${invoices.length} invoices`,
             type: 'button',
-            value: 'send',
+            value: 'SK',
             style: 'primary',
             confirm: {
-              title: 'Do you really want to send these invoices?',
+              title: 'Do you really want to send these Slovak invoices?',
+              ok_text: 'Yes, send them all',
+              dismiss_text: 'No',
+            },
+          },
+          {
+            name: 'send',
+            text: `Send ${invoices.length} invoices (EN)`,
+            type: 'button',
+            value: 'EN',
+            confirm: {
+              title: 'Do you really want to send these English invoices?',
               ok_text: 'Yes, send them all',
               dismiss_text: 'No',
             },
