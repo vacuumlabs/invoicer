@@ -16,7 +16,7 @@ export async function saveInvoice(invoice, stream, config) {
 
   const userFolder = `${config.rootFolder}/${invoice.user}/${config.userFolder}`
 
-  await ensureFolder(userFolder, `${invoice.email}:anyone`)
+  await ensureFolder(userFolder, invoice.email && `${invoice.email}:anyone`)
 
   const name = `${invoice.user}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
   const year = invoice.paymentDate.split('-')[0]
