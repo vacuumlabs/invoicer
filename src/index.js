@@ -74,13 +74,15 @@ function* actions(req, res) {
 function* invoice(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
-    const htmlInvoice = renderInvoice(query2invoice(req.query), req.query.lang)
+    const invoiceData = query2invoice(req.query)
+    const htmlInvoice = renderInvoice(invoiceData, req.query.lang)
     pdf
       .create(htmlInvoice, {format: 'A4'})
       .toBuffer((err, buffer) => {
         if (err) logger.warn('PDF conversion failed')
+        const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.query2invoice}${invoiceData.invoiceNumber}`
         res.set({
-          'Content-Disposition': 'attachment; filename="invoice.pdf"',
+          'Content-Disposition': `attachment; filename="${fileName}.pdf"`,
         })
         res.status(200).send(buffer)
       })
