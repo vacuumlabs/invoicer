@@ -288,10 +288,17 @@ const priceFormatters = {
 
 handlebars.registerHelper('formatPrice', (value, currency) => priceFormatters[currency].format(value))
 
+const domesticCountries = [
+  'The United States of America',
+  'United Kingdom',
+]
+
 export default function invoice(_context, language) {
   const context = {..._context}
 
   context.domestic = context.vendorCountry === context.clientCountry
+    || domesticCountries.includes(context.clientCountry)
+    || context.clientCountry.includes('US')
 
   if (context.vendorID && context.vendorID.startsWith('@@')) {
     context.vendorID = null
