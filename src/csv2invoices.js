@@ -23,8 +23,10 @@ export function csv2invoices(csv) {
     const row = {services: [], preTaxCostSum: 0, VATSum: 0, fullCostSum: 0}
     for (; i < columns.length; i++) row[columns[i]] = r[i]
     for (const k of booleanColumns) row[k] = row[k].toLowerCase() === 'true'
+    let hasNewItemsFormat = true
     for (; i < r.length; i += 4) {
       if (r[i] === '') break
+      hasNewItemsFormat = false
       const preTaxCost = finRound(parseFloat(r[i + 1]))
       const VATLevel = finRound(parseFloat(r[i + 2]))
       const VAT = finRound(preTaxCost * VATLevel)
@@ -35,6 +37,22 @@ export function csv2invoices(csv) {
       row.preTaxCostSum += preTaxCost
       row.VATSum += VAT
       row.fullCostSum += fullCost
+    }
+    i++;
+    if (hasNewItemsFormat) {
+      for (; i < r.length; i += 4) {
+        if (r[i] === '') break
+        const preTaxCost = finRound(parseFloat(r[i + 1]))
+        const VATLevel = finRound(parseFloat(r[i + 2]))
+        const VAT = finRound(preTaxCost * VATLevel)
+        const fullCost = finRound(parseFloat(r[i + 3]))
+        row.services.push({
+          name: r[i], preTaxCost, VATLevel, VAT, fullCost,
+        })
+        row.preTaxCostSum += preTaxCost
+        row.VATSum += VAT
+        row.fullCostSum += fullCost
+      }
     }
     row.isCreditNote = row.fullCostSum < 0
     i++;
