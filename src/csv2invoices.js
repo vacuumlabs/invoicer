@@ -10,6 +10,8 @@ const columns = [
 
 const booleanColumns = ['isReceived', 'vendorVATPayer']
 
+const additionalColumns = ['invoiceType']
+
 function finRound(n) {
   return Math.round(n * 100 + 1e-6) / 100
 }
@@ -35,6 +37,8 @@ export function csv2invoices(csv) {
       row.fullCostSum += fullCost
     }
     row.isCreditNote = row.fullCostSum < 0
+    i++;
+    for (let j = 0; j < additionalColumns.length; i++, j++) row[additionalColumns[j]] = r[i]
     return row
   })
 }

@@ -218,6 +218,7 @@ async function handleCSVUpload(event, bot, botPendingInvoice) {
 
   const file = event.files[0]
   const csv = await request.get(file.url_private)
+
   const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
 
   await sendXML(invoices, file.title, file.name, bot)

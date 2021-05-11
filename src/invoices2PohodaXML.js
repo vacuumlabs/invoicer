@@ -25,13 +25,15 @@ const template = `
                 <inv:invoiceHeader>
                     <inv:originalDocument>{{invoicePrefix}}{{invoiceNumber}}</inv:originalDocument>
                     <inv:symVar>{{symVar}}</inv:symVar>
-                    {{#if isReceived}}
-                        <inv:invoiceType>receivedInvoice</inv:invoiceType>
+                    {{#if invoiceType}}
+                      <inv:invoiceType>{{invoiceType}}</inv:invoiceType>
+                    {{else if isReceived}}
+                      <inv:invoiceType>receivedInvoice</inv:invoiceType>
                     {{else}}
-                        <inv:number>
-                          <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
-                        </inv:number>
-                        <inv:invoiceType>issuedInvoice</inv:invoiceType>
+                      <inv:number>
+                        <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
+                      </inv:number>
+                      <inv:invoiceType>issuedInvoice</inv:invoiceType>
                     {{/if}}
                     <inv:date>{{XMLDate issueDate}}</inv:date>
                     <inv:dateTax>{{XMLDate issueDate}}</inv:dateTax>
@@ -114,6 +116,5 @@ export default function invoices2PohodaXML(invoices) {
 
     invoice.symVar = (invoice.invoicePrefix + invoice.invoiceNumber).match(/\d+$/)[0]
   }
-  console.log(invoices)
   return handlebars.compile(template)(invoices)
 }
