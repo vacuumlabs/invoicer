@@ -116,7 +116,9 @@ const template = `
   </style>
   <body>
     <h1>
-      {{#if isCreditNote}}
+      {{#if customTitle}}
+        {{customTitle}}
+      {{else if isCreditNote}}
         {{texts.titleCreditNote}}
       {{else}}
         {{texts.titleInvoice}}
@@ -224,6 +226,7 @@ const texts = {
   SK: {
     titleCreditNote: 'Dobropis',
     titleInvoice: 'Faktúra',
+    titleAdvanceInvoice: 'Zálohová faktúra',
     supplier: 'Dodávateľ',
     companyId: 'IČO',
     taxId: 'DIČ',
@@ -249,6 +252,7 @@ const texts = {
   EN: {
     titleCreditNote: 'Credit Note',
     titleInvoice: 'Invoice',
+    titleAdvanceInvoice: 'Proforma invoice',
     supplier: 'Supplier',
     companyId: 'ID',
     taxId: 'TAX ID',
@@ -271,6 +275,12 @@ const texts = {
     taxPaysCustomerInvoice: 'Delivery of service takes place in a different EU member state, according to VAT bill § 15 resp. § 16. Person responsible for tax payment is the recipient.',
     taxPaysCustomerCreditNote: 'Delivery of service takes place in a different EU member state, according to VAT bill § 15 resp. § 16. Person responsible for tax payment is the recipient.',
   },
+}
+
+const customTypeTitleMap = {
+  issuedInvoice: 'titleInvoice',
+  issuedCreditNotice: 'titleCreditNote',
+  issuedAdvanceInvoice: 'titleAdvanceInvoice',
 }
 
 const priceFormatters = {
@@ -305,6 +315,9 @@ export default function invoice(_context, language) {
   }
 
   context.texts = texts[language] || texts.SK
+  context.customTitle = context.invoiceType && customTypeTitleMap[context.invoiceType]
+    ? context.texts[customTypeTitleMap[context.invoiceType]]
+    : null
 
   return handlebars.compile(template)(context, {data: {intl: {
     locales: 'en-US',
