@@ -59,7 +59,7 @@ const slackEvents = createChannel()
 }*/
 
 function query2invoice(query) {
-  const invoice = query.id ? shortNames[query.id] : JSON.parse(query.invoice)
+  const invoice = query.id ? { ...shortNames[query.id] } : JSON.parse(query.invoice)
   invoice.issueDate = Date.parse(invoice.issueDate)
   invoice.paymentDate = Date.parse(invoice.paymentDate)
   return invoice
