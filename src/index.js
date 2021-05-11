@@ -80,7 +80,7 @@ function* invoice(req, res) {
       .create(htmlInvoice, {format: 'A4'})
       .toBuffer((err, buffer) => {
         if (err) logger.warn('PDF conversion failed')
-        const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.query2invoice}${invoiceData.invoiceNumber}`
+        const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}`
         res.set({
           'Content-Disposition': `attachment; filename="${fileName}.pdf"`,
         })
