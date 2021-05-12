@@ -10,7 +10,7 @@ const columns = [
 
 const booleanColumns = ['isReceived', 'vendorVATPayer']
 
-const additionalColumns = ['invoiceType']
+const additionalColumns = ['invoiceType', 'currencyRate', 'totalRounding']
 
 function finRound(n) {
   return Math.round(n * 100 + 1e-6) / 100

@@ -7,7 +7,7 @@ handlebars.registerHelper('XMLDate', (context) =>
 )
 
 handlebars.registerHelper('toFixed2', (context) =>
-  context.toFixed(2)
+  Number(context).toFixed(2)
 )
 
 const template = `
@@ -86,15 +86,37 @@ const template = `
                         <inv:quantity>1</inv:quantity>
                         {{#if ../vendorVATPayer}}<inv:rateVAT>high</inv:rateVAT>{{/if}}
                         <inv:percentVAT>{{toFixed2 VATLevel}}</inv:percentVAT>
-                        <inv:homeCurrency>
+                        <inv:{{../currencyTag}}>
                             <typ:unitPrice>{{toFixed2 preTaxCost}}</typ:unitPrice>
                             <typ:price>{{toFixed2 preTaxCost}}</typ:price>
                             <typ:priceVAT>{{toFixed2 VAT}}</typ:priceVAT>
-                        </inv:homeCurrency>
+                        </inv:{{../currencyTag}}>
                     </inv:invoiceItem>
                 {{/services}}
+
+                {{#if totalRounding}}
+                  <inv:invoiceItem>
+                      <inv:text>Zaokrúhlenie</inv:text>
+                      <inv:quantity>1</inv:quantity>
+                      <inv:rateVAT>none</inv:rateVAT>
+                      <inv:homeCurrency>
+                          <typ:unitPrice>{{toFixed2 totalRounding}}</typ:unitPrice>
+                      </inv:homeCurrency>
+                  </inv:invoiceItem>
+                {{/if}}
                 
                 </inv:invoiceDetail>
+
+                {{#if currencyRate}}
+                  <inv:invoiceSummary>	
+                      <inv:foreignCurrency>
+                          <typ:currency>
+                              <typ:ids>{{currency}}</typ:ids>
+                          </typ:currency>
+                          <typ:rate>{{currencyRate}}</typ:rate>
+                      </inv:foreignCurrency>
+                  </inv:invoiceSummary>
+                {{/if}}
             </inv:invoice>
         </dat:dataPackItem>
         
@@ -115,6 +137,8 @@ export default function invoices2PohodaXML(invoices) {
     invoice.partner = partner
 
     invoice.symVar = (invoice.invoicePrefix + invoice.invoiceNumber).match(/\d+$/)[0]
+
+    invoice.currencyTag = invoice.currencyRate ? 'foreignCurrency' : 'homeCurrency'
   }
   return handlebars.compile(template)(invoices)
 }
