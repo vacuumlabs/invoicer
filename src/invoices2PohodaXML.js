@@ -25,16 +25,12 @@ const template = `
                 <inv:invoiceHeader>
                     <inv:originalDocument>{{invoicePrefix}}{{invoiceNumber}}</inv:originalDocument>
                     <inv:symVar>{{symVar}}</inv:symVar>
-                    {{#if invoiceType}}
-                      <inv:invoiceType>{{invoiceType}}</inv:invoiceType>
-                    {{else if isReceived}}
-                      <inv:invoiceType>receivedInvoice</inv:invoiceType>
-                    {{else}}
+                    {{#if showNumberRequested}}
                       <inv:number>
                         <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
                       </inv:number>
-                      <inv:invoiceType>issuedInvoice</inv:invoiceType>
                     {{/if}}
+                    <inv:invoiceType>{{invoiceType}}</inv:invoiceType>
                     <inv:date>{{XMLDate issueDate}}</inv:date>
                     <inv:dateTax>{{XMLDate issueDate}}</inv:dateTax>
                     <inv:dateAccounting>{{XMLDate issueDate}}</inv:dateAccounting>
@@ -117,6 +113,10 @@ const template = `
                       </inv:foreignCurrency>
                   </inv:invoiceSummary>
                 {{/if}}
+
+                {{#if isPL}}
+                  <inv:isPL>{{isPL}}</inv:isPL>
+                {{/if}}
             </inv:invoice>
         </dat:dataPackItem>
         
@@ -139,6 +139,8 @@ export default function invoices2PohodaXML(invoices) {
     invoice.symVar = (invoice.invoicePrefix + invoice.invoiceNumber).match(/\d+$/)[0]
 
     invoice.currencyTag = invoice.currencyRate ? 'foreignCurrency' : 'homeCurrency'
+    invoice.invoiceType = invoice.invoiceType || (invoice.isReceived ? 'receivedInvoice' : 'issuedInvoice')
+    invoice.showNumberRequested = invoice.invoiceType !== 'receivedInvoice'
   }
   return handlebars.compile(template)(invoices)
 }
