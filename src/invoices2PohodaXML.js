@@ -86,6 +86,9 @@ const template = `
                             <typ:unitPrice>{{toFixed2 preTaxCost}}</typ:unitPrice>
                             <typ:price>{{toFixed2 preTaxCost}}</typ:price>
                             <typ:priceVAT>{{toFixed2 VAT}}</typ:priceVAT>
+                            {{#if showFullCost}}
+                            <typ:priceSum>{{toFixed2 fullCost}}</typ:priceSum>
+                            {{/if}}
                         </inv:{{../currencyTag}}>
                     </inv:invoiceItem>
                 {{/services}}

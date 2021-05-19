@@ -32,7 +32,7 @@ export function csv2invoices(csv) {
       const VAT = finRound(preTaxCost * VATLevel)
       const fullCost = preTaxCost + VAT
       row.services.push({
-        name: r[i], preTaxCost, VATLevel, VAT, fullCost,
+        name: r[i], preTaxCost, VATLevel, VAT, fullCost, showFullCost: false,
       })
       row.preTaxCostSum += preTaxCost
       row.VATSum += VAT
@@ -47,7 +47,7 @@ export function csv2invoices(csv) {
         const VAT = finRound(preTaxCost * VATLevel)
         const fullCost = finRound(parseFloat(r[i + 3]))
         row.services.push({
-          name: r[i], preTaxCost, VATLevel, VAT, fullCost,
+          name: r[i], preTaxCost, VATLevel, VAT, fullCost, showFullCost: true,
         })
         row.preTaxCostSum += preTaxCost
         row.VATSum += VAT
