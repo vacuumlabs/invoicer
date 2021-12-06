@@ -17,7 +17,7 @@ const request = _request.defaults({headers: {
 }})
 
 let apiState
-let pendingInvoice = {}
+const pendingInvoice = {}
 
 export async function listenSlack(bots, token, stream) {
   apiState = init(token, stream)
@@ -31,7 +31,7 @@ export async function listenSlack(bots, token, stream) {
 
   for (;;) {
     const event = await stream.take()
-    logger.log('verbose', `slack event ${event.type}`, event)
+    logger.log('verbose', `slack event ${event.type}`, JSON.stringify(event))
 
     const channelId = event.channel && (event.channel.id || event.channel)
     const bot = channelId && bots[channelId]
