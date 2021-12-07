@@ -71,26 +71,26 @@ async function handleInvoicesAction(event, bot, botPendingInvoice) {
   const {channel, ts, message: {attachments: [attachment]}} =
     botPendingInvoice.confirmation
 
-  async function updateMessage(attachmentUpdate) {
-    await apiCall(apiState, 'chat.update', {channel, ts, as_user: true,
-      attachments: [{...attachment, ...attachmentUpdate}],
+  async function updateMessage(newAttachments, text) {
+    await apiCall(apiState, 'chat.update', {
+      channel, ts, as_user: true,
+      attachments: newAttachments,
+      ...{text},
     })
   }
 
   if (event.actions[0].name === 'send') {
-    await updateMessage({
+    await updateMessage([{
+      ...attachment,
       pretext: ':woman: Sending invoices:',
       color: 'good',
       actions: [],
-    })
+    }])
+
     await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, event.actions[0].value, bot)
       .catch((e) => showError(apiState, channel, 'Something went wrong.'))
 
-    await apiCall(apiState, 'chat.update', {
-      channel, ts, as_user: true,
-      text: ':woman: Invoices sent successfully.',
-      attachments: [],
-    })
+    await updateMessage([], ':woman: Invoices sent successfully.')
 
   } else {
     await cancelInvoices(ts, channel)
@@ -275,6 +275,6 @@ async function handleCSVUpload(event, bot, botPendingInvoice) {
     id: event.ts,
     invoices,
     confirmation,
-    comment: event.text || 'Your monthly invoice from VacuumLabs: _link_',
+    comment: `${event.text || 'Your monthly invoice from VacuumLabs:'}\n_link_`,
   }
 }
