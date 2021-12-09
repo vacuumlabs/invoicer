@@ -37,10 +37,16 @@ export const handleMessage = async (event) => {
     return
   }
 
-  const botPendingInvoice = pendingInvoice[channelId]
-
   if (isCSVUpload(event)) {
-    await handleCSVUpload(event, bot, botPendingInvoice)
+    const botPendingInvoice = pendingInvoice[channelId]
+    // cancel old invoice, it will be overwritten by a new one
+    if (botPendingInvoice) {
+      await cancelInvoices(
+        botPendingInvoice.confirmation.ts,
+        botPendingInvoice.confirmation.channel,
+      )
+    }
+    await handleCSVUpload(event, bot)
   }
 }
 
@@ -220,14 +226,7 @@ function formatInvoice(invoice) {
   return `${date} ${cost} ${user} ${partner} ${direction} <${`${url}&lang=SK`}|📩 SK> <${`${url}&lang=EN`}|📩 EN>`
 }
 
-async function handleCSVUpload(event, bot, botPendingInvoice) {
-  if (botPendingInvoice) {
-    await cancelInvoices(
-      botPendingInvoice.confirmation.ts,
-      botPendingInvoice.confirmation.channel,
-    )
-  }
-
+async function handleCSVUpload(event, bot) {
   const file = event.files[0]
   const csv = await request.get(file.url_private)
 
