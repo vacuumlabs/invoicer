@@ -45,17 +45,6 @@ async function connect(state, stream) {
   return connection
 }
 
-export function isMessage(event) {
-  return event.type === 'message' && event.subtype == null
-}
-
-export function amIMentioned(state, event) {
-  if (event.user === state.bot.id) return false
-  if (event.channel[0] === 'D') return true
-  if (event.text.match(`<@${state.bot.id}>`)) return true
-  return false
-}
-
 export async function apiCall(state, name, data = {}) {
   for (const k in data) {
     if (typeof data[k] === 'object') data[k] = JSON.stringify(data[k])
