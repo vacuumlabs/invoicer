@@ -1,13 +1,14 @@
-import c from './config'
 import express from 'express'
 import bodyParser from 'body-parser'
 import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
+import pdf from 'html-pdf'
 import {App, ExpressReceiver} from '@slack/bolt'
+
+import c from './config'
 import renderInvoice from './invoice'
 import {handleMessage, listenSlack} from './slack'
 import {initStorage} from './storage'
-import pdf from 'html-pdf'
 import {routes as r, shortNames} from './routes'
 
 logger.cli()
