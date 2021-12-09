@@ -3,8 +3,9 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import {expressHelpers, run, createChannel} from 'yacol'
 import logger from 'winston'
+import {App, ExpressReceiver} from '@slack/bolt'
 import renderInvoice from './invoice'
-import {listenSlack} from './slack'
+import {handleMessage, listenSlack} from './slack'
 import {initStorage} from './storage'
 import pdf from 'html-pdf'
 import {routes as r, shortNames} from './routes'
@@ -59,7 +60,7 @@ const slackEvents = createChannel()
 }*/
 
 function query2invoice(query) {
-  const invoice = query.id ? { ...shortNames[query.id] } : JSON.parse(query.invoice)
+  const invoice = query.id ? {...shortNames[query.id]} : JSON.parse(query.invoice)
   invoice.issueDate = Date.parse(invoice.issueDate)
   invoice.paymentDate = Date.parse(invoice.paymentDate)
   return invoice
@@ -92,6 +93,22 @@ function* invoice(req, res) {
 register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)
 
+// inspired by: https://github.com/slackapi/bolt-js/issues/212
+const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
+app.use(r.events, boltReceiver.router)
+
+const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extendedErrorHandler: true})
+
+/**
+  @type import('@slack/bolt/dist/App').ExtendedErrorHandler
+*/
+const errorHandler = async ({error: {code, message, name, req, stack}, context, body}) => {
+  logger.error(`code: ${code}, message: ${message}, name: ${name}, req: ${JSON.stringify(req)}, stack: ${stack}, context: ${JSON.stringify(context)}, body: ${JSON.stringify(body)}`)
+}
+boltApp.error(errorHandler)
+
+boltApp.event('message', ({event}) => handleMessage(event))
+
 // eslint-disable-next-line require-await
 ;(async function() {
   run(runApp)
@@ -100,7 +117,7 @@ register(app, 'get', r.invoice, invoice)
   )
 
   await Promise.all([
-    Promise.all(Object.values(c.bots).map(bot => initStorage(bot.storage, c.google))),
+    Promise.all(Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google))),
     listenSlack(c.bots, c.slack.botToken, slackEvents),
   ])
 

@@ -19,6 +19,10 @@ const request = _request.defaults({headers: {
 let apiState
 const pendingInvoice = {}
 
+export const handleMessage = async (event) => {
+  logger.info(`handleMessage. event: ${JSON.stringify(event)}`)
+}
+
 export async function listenSlack(bots, token, stream) {
   apiState = init(token, stream)
 
