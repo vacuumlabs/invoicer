@@ -23,15 +23,15 @@ export const handleMessage = async (event) => {
   logger.info(`handleMessage. event: ${JSON.stringify(event)}`)
 }
 
+const isCSVUpload = (event) => (
+  event.type === 'message' &&
+  event.files &&
+  event.files.length === 1 &&
+  event.files[0].filetype === 'csv'
+)
+
 export async function listenSlack(bots, token, stream) {
   apiState = init(token, stream)
-
-  const isCSVUpload = (e) => (
-    e.type === 'message' &&
-    e.files &&
-    e.files.length === 1 &&
-    e.files[0].filetype === 'csv'
-  )
 
   for (;;) {
     const event = await stream.take()
