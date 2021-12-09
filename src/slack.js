@@ -19,16 +19,30 @@ const request = _request.defaults({headers: {
 let apiState
 const pendingInvoice = {}
 
-export const handleMessage = async (event) => {
-  logger.info(`handleMessage. event: ${JSON.stringify(event)}`)
-}
-
 const isCSVUpload = (event) => (
-  event.type === 'message' &&
   event.files &&
   event.files.length === 1 &&
   event.files[0].filetype === 'csv'
 )
+
+export const handleMessage = async (event) => {
+  logger.info('message event')
+  logger.verbose(JSON.stringify(event))
+
+  const channelId = event.channel && (event.channel.id || event.channel)
+  const bot = channelId && c.bots[channelId]
+
+  if (!bot) {
+    logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
+    return
+  }
+
+  const botPendingInvoice = pendingInvoice[channelId]
+
+  if (isCSVUpload(event)) {
+    await handleCSVUpload(event, bot, botPendingInvoice)
+  }
+}
 
 export async function listenSlack(bots, token, stream) {
   apiState = init(token, stream)
@@ -45,12 +59,6 @@ export async function listenSlack(bots, token, stream) {
     }
 
     const botPendingInvoice = pendingInvoice[channelId]
-
-    if (isCSVUpload(event)) {
-      logger.verbose('csv uploaded', event.files[0].url_private)
-      handleCSVUpload(event, bot, botPendingInvoice)
-      continue
-    }
 
     if (event.type === 'action') {
       if (botPendingInvoice && botPendingInvoice.id === event.callback_id) {
