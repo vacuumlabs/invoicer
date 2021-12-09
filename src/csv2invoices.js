@@ -21,15 +21,21 @@ export function csv2invoices(csv) {
   return parse(csv).map((r) => {
     let i = 0
     const row = {services: [], preTaxCostSum: 0, VATSum: 0, fullCostSum: 0}
+
+    // copy data of first 30 columns from `r` as object properties of `row`
     for (; i < columns.length; i++) row[columns[i]] = r[i]
+    // rewrite booleans in lowercase
     for (const k of booleanColumns) row[k] = row[k].toLowerCase() === 'true'
+
     let hasNewItemsFormat = true
     for (; i < r.length; i += 4) {
+      // new format is determined by '' at r[30]
       if (r[i] === '') break
       hasNewItemsFormat = false
       const preTaxCost = finRound(parseFloat(r[i + 1]))
       const VATLevel = finRound(parseFloat(r[i + 2]))
       const VAT = finRound(preTaxCost * VATLevel)
+      // calculates the full cost
       const fullCost = preTaxCost + VAT
       row.services.push({
         name: r[i], preTaxCost, VATLevel, VAT, fullCost, showFullCost: false,
@@ -38,13 +44,15 @@ export function csv2invoices(csv) {
       row.VATSum += VAT
       row.fullCostSum += fullCost
     }
-    i++;
+    // move to next value (after the empty one)
+    i++ // 31 if new format
     if (hasNewItemsFormat) {
       for (; i < r.length; i += 4) {
         if (r[i] === '') break
         const preTaxCost = finRound(parseFloat(r[i + 1]))
         const VATLevel = finRound(parseFloat(r[i + 2]))
         const VAT = finRound(preTaxCost * VATLevel)
+        // reads the full cost
         const fullCost = finRound(parseFloat(r[i + 3]))
         row.services.push({
           name: r[i], preTaxCost, VATLevel, VAT, fullCost, showFullCost: true,
@@ -55,7 +63,9 @@ export function csv2invoices(csv) {
       }
     }
     row.isCreditNote = row.fullCostSum < 0
-    i++;
+    // move to next value (after the empty one)
+    i++
+    // load additional columns
     for (let j = 0; j < additionalColumns.length; i++, j++) row[additionalColumns[j]] = r[i]
     return row
   })

@@ -59,10 +59,12 @@ export async function apiCall(state, name, data = {}) {
 
 export async function apiCallMultipart(state, name, data = {}) {
   for (const k in data) {
+    // first difference from apiCall - the `k !== 'file'` check
     if (typeof data[k] === 'object' && k !== 'file') data[k] = JSON.stringify(data[k])
   }
 
   logger.log('verbose', `call slack.api.${name}`, data)
+  // second difference from apiCall - `formData:` vs. `form:`
   const response = JSON.parse(await request.post(`${API}${name}`, {formData: {...data, token: state.token}}))
   logger.log('verbose', `response slack.api.${name}`, {args: data, response})
 
