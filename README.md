@@ -21,6 +21,7 @@ Creates, stores and sends invoices.
   - _sendOnSlack_ - 0/1 - send notification to invoice recipient on slack
   - _groupByYear_ - 0/1 - group invoices on gdrive by year
 - `slack_bot_token` - bot user OAuth token from Slack app - menu Install App
+- `slack_bot_signing_secret` - bot signing secret from Slack app - menu Basic Information
 - `pohoda_import_id` - import ID used in generated Pohoda XML file
 - `host` - URL where the app is deployed
 
