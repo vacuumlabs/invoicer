@@ -7,7 +7,7 @@ import {App, ExpressReceiver} from '@slack/bolt'
 
 import c from './config'
 import renderInvoice from './invoice'
-import {ACTION_ID_CANCEL, ACTION_ID_SEND, handleAction, handleMessage, initState} from './slack'
+import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, handleAction, handleMessage, initState} from './slack'
 import {initStorage} from './storage'
 import {routes as r, shortNames} from './routes'
 
@@ -105,14 +105,13 @@ boltApp.error(errorHandler)
 
 boltApp.event('message', ({message}) => handleMessage(message))
 
-boltApp.action(ACTION_ID_SEND, (event) => handleAction(event))
-boltApp.action(ACTION_ID_CANCEL, (event) => handleAction(event))
+boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID_CANCEL}`, 'g'), (event) => handleAction(event))
 
-// eslint-disable-next-line require-await
 ;(async function() {
   initState(c.slack.botToken)
 
   run(runApp)
+
   app.listen(c.port, () =>
     logger.log('info', `App started on localhost:${c.port}.`)
   )

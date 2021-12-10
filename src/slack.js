@@ -10,7 +10,8 @@ import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 
-export const ACTION_ID_SEND = 'send'
+export const ACTION_ID_SEND_SK = 'send_sk'
+export const ACTION_ID_SEND_EN = 'send_en'
 export const ACTION_ID_CANCEL = 'cancel'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
@@ -302,7 +303,7 @@ async function handleCSVUpload(event, bot) {
               type: 'plain_text',
               text: `Send ${invoices.length} invoices`,
             },
-            action_id: ACTION_ID_SEND,
+            action_id: ACTION_ID_SEND_SK,
             value: 'SK',
             style: 'primary',
             confirm: {
@@ -330,7 +331,7 @@ async function handleCSVUpload(event, bot) {
               type: 'plain_text',
               text: `Send ${invoices.length} invoices (EN)`,
             },
-            action_id: ACTION_ID_SEND,
+            action_id: ACTION_ID_SEND_EN,
             value: 'EN',
             confirm: {
               title: {
