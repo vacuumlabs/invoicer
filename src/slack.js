@@ -64,6 +64,7 @@ export const handleMessage = async (message) => {
     }
   } catch (e) {
     logger.error(`error in handleMessage: ${e}`)
+    await showError(apiState, message.channel, 'Something went wrong.')
   }
 }
 
@@ -131,7 +132,7 @@ const getInvoicesSummaryBlocks = (invoices) => [
  * @param {import('@slack/bolt').ButtonAction} action
  */
 async function handleInvoicesAction(action, bot, botPendingInvoice) {
-  const {channel, ts, invoices} = botPendingInvoice.confirmation
+  const {confirmation: {channel, ts}, invoices} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await apiCall(apiState, 'chat.update', {
