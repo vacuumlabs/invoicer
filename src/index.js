@@ -1,13 +1,13 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import {expressHelpers, run, createChannel} from 'yacol'
+import {expressHelpers, run} from 'yacol'
 import logger from 'winston'
 import pdf from 'html-pdf'
 import {App, ExpressReceiver} from '@slack/bolt'
 
 import c from './config'
 import renderInvoice from './invoice'
-import {handleMessage, listenSlack} from './slack'
+import {ACTION_ID_CANCEL, ACTION_ID_SEND, handleAction, handleMessage, initState} from './slack'
 import {initStorage} from './storage'
 import {routes as r, shortNames} from './routes'
 
@@ -19,8 +19,6 @@ const app = express()
 app.use(bodyParser.urlencoded())
 
 const {register, runApp} = expressHelpers
-
-const slackEvents = createChannel()
 
 /*const exampleQuery = {
   invoicePrefix: 'VAC17',
@@ -67,12 +65,6 @@ function query2invoice(query) {
   return invoice
 }
 
-// eslint-disable-next-line require-yield
-function* actions(req, res) {
-  slackEvents.put({...JSON.parse(req.body.payload), type: 'action'})
-  res.status(200).send()
-}
-
 function* invoice(req, res) {
   // eslint-disable-next-line require-await
   yield (async function() {
@@ -91,12 +83,14 @@ function* invoice(req, res) {
   })()
 }
 
-register(app, 'post', r.actions, actions)
 register(app, 'get', r.invoice, invoice)
 
 // inspired by: https://github.com/slackapi/bolt-js/issues/212
+// done the same way as in AskMeBot
 const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
+
 app.use(r.events, boltReceiver.router)
+app.use(r.actions, boltReceiver.router)
 
 const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extendedErrorHandler: true})
 
@@ -106,12 +100,18 @@ const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extend
 const errorHandler = async ({error: {code, message, name, req, stack}, context, body}) => {
   logger.error(`code: ${code}, message: ${message}, name: ${name}, req: ${JSON.stringify(req)}, stack: ${stack}, context: ${JSON.stringify(context)}, body: ${JSON.stringify(body)}`)
 }
+
 boltApp.error(errorHandler)
 
-boltApp.event('message', ({event}) => handleMessage(event))
+boltApp.event('message', ({message}) => handleMessage(message))
+
+boltApp.action(ACTION_ID_SEND, (event) => handleAction(event))
+boltApp.action(ACTION_ID_CANCEL, (event) => handleAction(event))
 
 // eslint-disable-next-line require-await
 ;(async function() {
+  initState(c.slack.botToken)
+
   run(runApp)
   app.listen(c.port, () =>
     logger.log('info', `App started on localhost:${c.port}.`)
@@ -119,7 +119,6 @@ boltApp.event('message', ({event}) => handleMessage(event))
 
   await Promise.all([
     Promise.all(Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google))),
-    listenSlack(c.bots, c.slack.botToken, slackEvents),
   ])
 
 })().catch((e) => {

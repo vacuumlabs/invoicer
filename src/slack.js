@@ -1,6 +1,6 @@
 import c from './config'
 import logger from 'winston'
-import {init, apiCall, apiCallMultipart, showError} from './slackApi'
+import {apiCall, apiCallMultipart, showError} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
@@ -9,6 +9,9 @@ import pdf from 'html-pdf'
 import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
+
+export const ACTION_ID_SEND = 'send'
+export const ACTION_ID_CANCEL = 'cancel'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -19,17 +22,26 @@ const request = _request.defaults({headers: {
 let apiState
 const pendingInvoice = {}
 
+export const initState = (token) => {
+  apiState = {
+    token,
+  }
+}
+
 const isCSVUpload = (event) => (
   event.files &&
   event.files.length === 1 &&
   event.files[0].filetype === 'csv'
 )
 
-export const handleMessage = async (event) => {
+/**
+ * @param {import('@slack/bolt').KnownEventFromType<"message">} message
+ */
+export const handleMessage = async (message) => {
   logger.info('message event')
-  logger.verbose(JSON.stringify(event))
+  logger.verbose(JSON.stringify(message))
 
-  const channelId = event.channel && (event.channel.id || event.channel)
+  const channelId = message.channel
   const bot = channelId && c.bots[channelId]
 
   if (!bot) {
@@ -37,7 +49,7 @@ export const handleMessage = async (event) => {
     return
   }
 
-  if (isCSVUpload(event)) {
+  if (isCSVUpload(message)) {
     const botPendingInvoice = pendingInvoice[channelId]
     // cancel old invoice, it will be overwritten by a new one
     if (botPendingInvoice) {
@@ -46,38 +58,42 @@ export const handleMessage = async (event) => {
         botPendingInvoice.confirmation.channel,
       )
     }
-    await handleCSVUpload(event, bot)
+    await handleCSVUpload(message, bot)
   }
 }
 
-export async function listenSlack(bots, token, stream) {
-  apiState = init(token, stream)
+/**
+ * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackActionMiddlewareArgs<import('@slack/bolt').SlackAction>>
+ */
+export const handleAction = async ({action, body, ack}) => {
+  logger.info('action event')
+  logger.info(JSON.stringify(action))
 
-  for (;;) {
-    const event = await stream.take()
-    logger.log('verbose', `slack event ${event.type}`, JSON.stringify(event))
+  await ack()
 
-    const channelId = event.channel && (event.channel.id || event.channel)
-    const bot = channelId && bots[channelId]
+  // safe type narrowing
+  // we know the handled action is always a block button action, but typescript doesn't
+  if (!('block_id' in action) || action.type !== 'button' || body.type !== 'block_actions') return
 
-    if (!bot) {
-      continue
-    }
+  const channelId = body.channel && body.channel.id
+  const bot = channelId && c.bots[channelId]
 
-    const botPendingInvoice = pendingInvoice[channelId]
+  if (!bot) {
+    logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
+    return
+  }
 
-    if (event.type === 'action') {
-      if (botPendingInvoice && botPendingInvoice.id === event.callback_id) {
-        await handleInvoicesAction(event, bot, botPendingInvoice)
-        pendingInvoice[channelId] = null
-      } else {
-        logger.log('warn', 'pending invoice error', botPendingInvoice, event.callback_id)
-        await showError(apiState, channelId,
-          'The operation has timed out. Please, re-upload your CSV file with invoices.',
-          event.original_message.ts
-        )
-      }
-    }
+  const botPendingInvoice = pendingInvoice[channelId]
+
+  if (botPendingInvoice && botPendingInvoice.id === action.block_id) {
+    await handleInvoicesAction(action, bot, botPendingInvoice)
+    pendingInvoice[channelId] = null
+  } else {
+    logger.warn('pending invoice error', botPendingInvoice, action.block_id)
+    await showError(apiState, channelId,
+      'The operation has timed out. Please, re-upload your CSV file with invoices.',
+      body.message.ts
+    )
   }
 }
 
@@ -85,32 +101,61 @@ async function cancelInvoices(ts, channel) {
   await showError(apiState, channel, 'Invoices canceled', ts)
 }
 
-async function handleInvoicesAction(event, bot, botPendingInvoice) {
-  const {channel, ts, message: {attachments: [attachment]}} =
-    botPendingInvoice.confirmation
+const getInvoicesSummaryBlocks = (invoices) => [
+  {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: '*Invoices summary*',
+    },
+  },
+  {
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      text: invoices.map(formatInvoice).join('\n'),
+    },
+  },
+]
 
-  async function updateMessage(newAttachments, text) {
+/**
+ * @param {import('@slack/bolt').ButtonAction} action
+ */
+async function handleInvoicesAction(action, bot, botPendingInvoice) {
+  const {channel, ts, invoices} = botPendingInvoice.confirmation
+
+  if (action.action_id === 'send') {
     await apiCall(apiState, 'chat.update', {
       channel, ts, as_user: true,
-      attachments: newAttachments,
-      ...{text},
+      blocks: [
+        ...getInvoicesSummaryBlocks(invoices),
+        {
+          type: 'section',
+          text: {
+            type: 'plain_text',
+            text: ':woman: Sending invoice...:',
+          },
+        },
+      ],
     })
-  }
 
-  if (event.actions[0].name === 'send') {
-    await updateMessage([{
-      ...attachment,
-      pretext: ':woman: Sending invoices:',
-      color: 'good',
-      actions: [],
-    }])
-
-    await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, event.actions[0].value, bot)
+    await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, action.value, bot)
       .catch((e) => showError(apiState, channel, 'Something went wrong.'))
 
-    await updateMessage([], ':woman: Invoices sent successfully.')
-
-  } else {
+    await apiCall(apiState, 'chat.update', {
+      channel, ts, as_user: true,
+      blocks: [
+        ...getInvoicesSummaryBlocks(invoices),
+        {
+          type: 'section',
+          text: {
+            type: 'plain_text',
+            text: ':woman: Invoices sent successfully.',
+          },
+        },
+      ],
+    })
+  } else { // action_id === 'cancel'
     await cancelInvoices(ts, channel)
   }
 }
@@ -237,44 +282,82 @@ async function handleCSVUpload(event, bot) {
   const confirmation = await apiCall(apiState, 'chat.postMessage', {
     channel: bot.channel,
     as_user: true,
-    text: 'You have uploaded a file, haven\'t you?',
-    attachments: [
+    text: 'Invoices summary',
+    blocks: [
+      ...getInvoicesSummaryBlocks(invoices),
       {
-        title: 'Invoices summary',
-        text: invoices.map(formatInvoice).join('\n'),
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: '*Should I send above invoices?*',
+        },
       },
       {
-        title: 'Should I send above invoices?',
-        callback_id: `${event.ts}`,
-        actions: [
+        type: 'actions',
+        block_id: `${event.ts}`,
+        elements: [
           {
-            name: 'send',
-            text: `Send ${invoices.length} invoices`,
             type: 'button',
+            text: {
+              type: 'plain_text',
+              text: `Send ${invoices.length} invoices`,
+            },
+            action_id: ACTION_ID_SEND,
             value: 'SK',
             style: 'primary',
             confirm: {
-              title: 'Do you really want to send these Slovak invoices?',
-              ok_text: 'Yes, send them all',
-              dismiss_text: 'No',
+              title: {
+                type: 'plain_text',
+                text: 'Are you sure?',
+              },
+              text: {
+                type: 'plain_text',
+                text: 'Do you really want to send these Slovak invoices?',
+              },
+              confirm: {
+                type: 'plain_text',
+                text: 'Yes, send them all',
+              },
+              deny: {
+                type: 'plain_text',
+                text: 'No',
+              },
             },
           },
           {
-            name: 'send',
-            text: `Send ${invoices.length} invoices (EN)`,
             type: 'button',
+            text: {
+              type: 'plain_text',
+              text: `Send ${invoices.length} invoices (EN)`,
+            },
+            action_id: ACTION_ID_SEND,
             value: 'EN',
             confirm: {
-              title: 'Do you really want to send these English invoices?',
-              ok_text: 'Yes, send them all',
-              dismiss_text: 'No',
+              title: {
+                type: 'plain_text',
+                text: 'Are you sure?',
+              },
+              text: {
+                type: 'plain_text',
+                text: 'Do you really want to send these English invoices?',
+              },
+              confirm: {
+                type: 'plain_text',
+                text: 'Yes, send them all',
+              },
+              deny: {
+                type: 'plain_text',
+                text: 'No',
+              },
             },
           },
           {
-            name: 'cancel',
-            text: 'Cancel',
             type: 'button',
-            value: 'cancel',
+            text: {
+              type: 'plain_text',
+              text: 'Cancel',
+            },
+            action_id: ACTION_ID_CANCEL,
             style: 'danger',
           },
         ],
