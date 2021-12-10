@@ -133,7 +133,7 @@ const getInvoicesSummaryBlocks = (invoices) => [
 async function handleInvoicesAction(action, bot, botPendingInvoice) {
   const {channel, ts, invoices} = botPendingInvoice.confirmation
 
-  if (action.action_id === 'send') {
+  if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await apiCall(apiState, 'chat.update', {
       channel, ts, as_user: true,
       blocks: [
