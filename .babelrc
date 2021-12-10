@@ -5,9 +5,5 @@
     "transform-es2015-modules-commonjs",
     "transform-export-extensions",
     "transform-object-rest-spread",
-    ["transform-async-to-module-method", {
-        "module": "yacol",
-        "method": "coroutine"
-    }]
   ]
 }

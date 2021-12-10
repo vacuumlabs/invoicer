@@ -1,6 +1,5 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import {expressHelpers, run} from 'yacol'
 import logger from 'winston'
 import pdf from 'html-pdf'
 import {App, ExpressReceiver} from '@slack/bolt'
@@ -16,8 +15,6 @@ logger.level = c.logLevel
 logger.setLevels(logger.config.npm.levels)
 
 const app = express()
-
-const {register, runApp} = expressHelpers
 
 /*const exampleQuery = {
   invoicePrefix: 'VAC17',
@@ -64,25 +61,22 @@ function query2invoice(query) {
   return invoice
 }
 
-function* invoice(req, res) {
-  // eslint-disable-next-line require-await
-  yield (async function() {
-    const invoiceData = query2invoice(req.query)
-    const htmlInvoice = renderInvoice(invoiceData, req.query.lang)
-    pdf
-      .create(htmlInvoice, {format: 'A4'})
-      .toBuffer((err, buffer) => {
-        if (err) logger.warn('PDF conversion failed')
-        const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}`
-        res.set({
-          'Content-Disposition': `attachment; filename="${fileName}.pdf"`,
-        })
-        res.status(200).send(buffer)
+function invoice(req, res) {
+  const invoiceData = query2invoice(req.query)
+  const htmlInvoice = renderInvoice(invoiceData, req.query.lang)
+  pdf
+    .create(htmlInvoice, {format: 'A4'})
+    .toBuffer((err, buffer) => {
+      if (err) logger.warn('PDF conversion failed')
+      const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}`
+      res.set({
+        'Content-Disposition': `attachment; filename="${fileName}.pdf"`,
       })
-  })()
+      res.status(200).send(buffer)
+    })
 }
 
-register(app, 'get', r.invoice, express.Router().use([bodyParser.urlencoded(), invoice]))
+app.get(r.invoice, bodyParser.urlencoded(), invoice)
 
 // inspired by: https://github.com/slackapi/bolt-js/issues/212
 // done the same way as in AskMeBot
@@ -108,8 +102,6 @@ boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID
 
 ;(async function() {
   initState(c.slack.botToken)
-
-  run(runApp)
 
   app.listen(c.port, () =>
     logger.log('info', `App started on localhost:${c.port}.`)
