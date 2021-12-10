@@ -16,7 +16,6 @@ logger.level = c.logLevel
 logger.setLevels(logger.config.npm.levels)
 
 const app = express()
-app.use(bodyParser.urlencoded())
 
 const {register, runApp} = expressHelpers
 
@@ -83,7 +82,7 @@ function* invoice(req, res) {
   })()
 }
 
-register(app, 'get', r.invoice, invoice)
+register(app, 'get', r.invoice, express.Router().use([bodyParser.urlencoded(), invoice]))
 
 // inspired by: https://github.com/slackapi/bolt-js/issues/212
 // done the same way as in AskMeBot
