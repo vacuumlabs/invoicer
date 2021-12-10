@@ -1,49 +1,8 @@
 import _request from 'request-promise'
 import logger from 'winston'
-import WS from 'ws'
 
 const request = _request.defaults({})
 const API = 'https://slack.com/api/'
-
-export function init(token, stream) {
-  const state = {
-    token,
-  }
-  maintainConnection(state, stream)
-  return state
-}
-
-async function maintainConnection(state, stream) {
-  for (;;) {
-    const connection = await connect(state, stream)
-    while (await isAlive(connection)) {/* empty */}
-    connection.terminate()
-    logger.log('info', 'Connection dropped, reconnecting.')
-  }
-}
-
-async function isAlive(connection) {
-  let alive = false
-  connection.ping('')
-  connection.once('pong', () => (alive = true))
-  await new Promise((resolve) => setTimeout(resolve, 10000))
-  return alive
-}
-
-async function connect(state, stream) {
-  const response = await apiCall(state, 'rtm.connect')
-
-  state.team = response.team
-  state.bot = response.self
-
-  const connection = new WS(response.url)
-  connection.on('message', (data) => stream.put(JSON.parse(data)))
-  await new Promise((resolve) => connection.once('open', resolve))
-
-  logger.log('info', 'WS connection to Slack established', {...state, token: '[SECRET]'})
-
-  return connection
-}
 
 export async function apiCall(state, name, data = {}) {
   for (const k in data) {
@@ -73,6 +32,15 @@ export async function apiCallMultipart(state, name, data = {}) {
 
 export async function showError(state, channel, msg, ts = null) {
   return await apiCall(state, ts ? 'chat.update' : 'chat.postMessage', {
-    channel, ts, as_user: true, text: `:exclamation: ${msg}`, attachments: [],
+    channel, ts, as_user: true,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'plain_text',
+          text: `:exclamation: ${msg}`,
+        },
+      },
+    ],
   })
 }
