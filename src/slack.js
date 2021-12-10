@@ -39,27 +39,31 @@ const isCSVUpload = (event) => (
  * @param {import('@slack/bolt').KnownEventFromType<"message">} message
  */
 export const handleMessage = async (message) => {
-  logger.info('message event')
-  logger.verbose(JSON.stringify(message))
+  try {
+    logger.info('message event')
+    logger.verbose(JSON.stringify(message))
 
-  const channelId = message.channel
-  const bot = channelId && c.bots[channelId]
+    const channelId = message.channel
+    const bot = channelId && c.bots[channelId]
 
-  if (!bot) {
-    logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
-    return
-  }
-
-  if (isCSVUpload(message)) {
-    const botPendingInvoice = pendingInvoice[channelId]
-    // cancel old invoice, it will be overwritten by a new one
-    if (botPendingInvoice) {
-      await cancelInvoices(
-        botPendingInvoice.confirmation.ts,
-        botPendingInvoice.confirmation.channel,
-      )
+    if (!bot) {
+      logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
+      return
     }
-    await handleCSVUpload(message, bot)
+
+    if (isCSVUpload(message)) {
+      const botPendingInvoice = pendingInvoice[channelId]
+      // cancel old invoice, it will be overwritten by a new one
+      if (botPendingInvoice) {
+        await cancelInvoices(
+          botPendingInvoice.confirmation.ts,
+          botPendingInvoice.confirmation.channel,
+        )
+      }
+      await handleCSVUpload(message, bot)
+    }
+  } catch (e) {
+    logger.error(`error in handleMessage: ${e}`)
   }
 }
 
@@ -67,34 +71,38 @@ export const handleMessage = async (message) => {
  * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackActionMiddlewareArgs<import('@slack/bolt').SlackAction>>
  */
 export const handleAction = async ({action, body, ack}) => {
-  logger.info('action event')
-  logger.info(JSON.stringify(action))
+  try {
+    logger.info('action event')
+    logger.info(JSON.stringify(action))
 
-  await ack()
+    await ack()
 
-  // safe type narrowing
-  // we know the handled action is always a block button action, but typescript doesn't
-  if (!('block_id' in action) || action.type !== 'button' || body.type !== 'block_actions') return
+    // safe type narrowing
+    // we know the handled action is always a block button action, but typescript doesn't
+    if (!('block_id' in action) || action.type !== 'button' || body.type !== 'block_actions') return
 
-  const channelId = body.channel && body.channel.id
-  const bot = channelId && c.bots[channelId]
+    const channelId = body.channel && body.channel.id
+    const bot = channelId && c.bots[channelId]
 
-  if (!bot) {
-    logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
-    return
-  }
+    if (!bot) {
+      logger.warn(`this channel (${channelId}) is not configured to be handled by the bot`)
+      return
+    }
 
-  const botPendingInvoice = pendingInvoice[channelId]
+    const botPendingInvoice = pendingInvoice[channelId]
 
-  if (botPendingInvoice && botPendingInvoice.id === action.block_id) {
-    await handleInvoicesAction(action, bot, botPendingInvoice)
-    pendingInvoice[channelId] = null
-  } else {
-    logger.warn('pending invoice error', botPendingInvoice, action.block_id)
-    await showError(apiState, channelId,
-      'The operation has timed out. Please, re-upload your CSV file with invoices.',
-      body.message.ts
-    )
+    if (botPendingInvoice && botPendingInvoice.id === action.block_id) {
+      await handleInvoicesAction(action, bot, botPendingInvoice)
+      pendingInvoice[channelId] = null
+    } else {
+      logger.warn('pending invoice error', botPendingInvoice, action.block_id)
+      await showError(apiState, channelId,
+        'The operation has timed out. Please, re-upload your CSV file with invoices.',
+        body.message.ts
+      )
+    }
+  } catch (e) {
+    logger.error(`error in handleAction: ${e}`)
   }
 }
 
