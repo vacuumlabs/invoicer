@@ -143,7 +143,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
           type: 'section',
           text: {
             type: 'plain_text',
-            text: ':woman: Sending invoice...:',
+            text: ':woman: Sending invoice...',
           },
         },
       ],
