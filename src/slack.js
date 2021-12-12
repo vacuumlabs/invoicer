@@ -111,22 +111,28 @@ async function cancelInvoices(ts, channel) {
   await showError(apiState, channel, 'Invoices canceled', ts)
 }
 
-const getInvoicesSummaryBlocks = (invoices) => [
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: '*Invoices summary*',
+const getInvoicesSummaryBlocks = (invoices) => {
+  const formattedInvoices = invoices.map(formatInvoice).join('\n')
+  // slack doesn't allow more than 3001 characters in text
+  const truncatedInvoices = formattedInvoices.length > 3000 ? `${formattedInvoices.slice(0, 2800)}... (list truncated)` : formattedInvoices
+
+  return [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: '*Invoices summary*',
+      },
     },
-  },
-  {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text: invoices.map(formatInvoice).join('\n'),
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: truncatedInvoices,
+      },
     },
-  },
-]
+  ]
+}
 
 /**
  * @param {import('@slack/bolt').ButtonAction} action
