@@ -111,40 +111,16 @@ async function cancelInvoices(ts, channel) {
   await showError(apiState, channel, 'Invoices canceled', ts)
 }
 
-const getInvoicesSummaryBlocks = (invoices) => {
-  const formattedInvoices = invoices.map(formatInvoice).join('\n')
-  // slack doesn't allow more than 3001 characters in text
-  const truncatedInvoices = formattedInvoices.length > 3000 ? `${formattedInvoices.slice(0, 2800)}... (list truncated)` : formattedInvoices
-
-  return [
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: '*Invoices summary*',
-      },
-    },
-    {
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        text: truncatedInvoices,
-      },
-    },
-  ]
-}
-
 /**
  * @param {import('@slack/bolt').ButtonAction} action
  */
 async function handleInvoicesAction(action, bot, botPendingInvoice) {
-  const {confirmation: {channel, ts}, invoices} = botPendingInvoice
+  const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await apiCall(apiState, 'chat.update', {
       channel, ts, as_user: true,
       blocks: [
-        ...getInvoicesSummaryBlocks(invoices),
         {
           type: 'section',
           text: {
@@ -161,7 +137,6 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await apiCall(apiState, 'chat.update', {
       channel, ts, as_user: true,
       blocks: [
-        ...getInvoicesSummaryBlocks(invoices),
         {
           type: 'section',
           text: {
@@ -269,10 +244,9 @@ async function sendInvoices(invoices, comment, language, bot) {
   })
 }
 
-function formatInvoice(invoice) {
+const formatInvoice = (invoice) => {
   const trimPad = (str, l) =>
     (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l)
-
 
   const [date, cost, user, partner] = [
     invoice.issueDate.padEnd(10),
@@ -284,6 +258,7 @@ function formatInvoice(invoice) {
   const direction = invoice.incomingInvoice ? '⟹' : '⟸'
   const id = store(invoice)
   const url = `${c.host}${r.invoice}?${querystring.stringify({id})}`
+
   return `${date} ${cost} ${user} ${partner} ${direction} <${`${url}&lang=SK`}|📩 SK> <${`${url}&lang=EN`}|📩 EN>`
 }
 
@@ -293,19 +268,29 @@ async function handleCSVUpload(event, bot) {
 
   const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
 
+  // message - XML
   await sendXML(invoices, file.title, file.name, bot)
 
+  const formattedInvoices = invoices.map(formatInvoice).join('\n')
+
+  // message - invoice list
+  await apiCall(apiState, 'chat.postMessage', {
+    channel: bot.channel,
+    as_user: true,
+    text: `*Invoices summary\n${formattedInvoices}`,
+  })
+
+  // message - actions
   const confirmation = await apiCall(apiState, 'chat.postMessage', {
     channel: bot.channel,
     as_user: true,
-    text: 'Invoices summary',
+    text: 'Should I send the invoices above?',
     blocks: [
-      ...getInvoicesSummaryBlocks(invoices),
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '*Should I send above invoices?*',
+          text: '*Should I send the invoices above?*',
         },
       },
       {
