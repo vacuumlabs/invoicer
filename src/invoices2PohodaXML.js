@@ -1,6 +1,7 @@
 import handlebars from 'handlebars'
 import c from './config'
 import _ from 'lodash'
+import logger from 'winston'
 
 handlebars.registerHelper('XMLDate', (context) =>
   new Date(context).toISOString().slice(0, 10)
@@ -144,6 +145,8 @@ export default function invoices2PohodaXML(invoices) {
     invoice.currencyTag = invoice.currencyRate ? 'foreignCurrency' : 'homeCurrency'
     invoice.invoiceType = invoice.invoiceType || (invoice.isReceived ? 'receivedInvoice' : 'issuedInvoice')
     invoice.showNumberRequested = invoice.invoiceType !== 'receivedInvoice'
+
+    logger.debug(`invoice before XML: ${invoice}`)
   }
   return handlebars.compile(template)(invoices)
 }
