@@ -264,6 +264,8 @@ const formatInvoice = (invoice) => {
 
 async function handleCSVUpload(event, bot) {
   const file = event.files[0]
+  logger.verbose(`handling CSV upload of file: ${JSON.stringify(file)}`)
+
   const csv = await request.get(file.url_private)
 
   const invoices = csv2invoices(csv) // TODO: Error handling invalid CSV
