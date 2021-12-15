@@ -277,7 +277,7 @@ async function handleCSVUpload(event, bot) {
   await apiCall(apiState, 'chat.postMessage', {
     channel: bot.channel,
     as_user: true,
-    text: `*Invoices summary\n${formattedInvoices}`,
+    text: `*Invoices summary*\n${formattedInvoices}`,
   })
 
   // message - actions
