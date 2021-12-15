@@ -146,7 +146,7 @@ export default function invoices2PohodaXML(invoices) {
     invoice.invoiceType = invoice.invoiceType || (invoice.isReceived ? 'receivedInvoice' : 'issuedInvoice')
     invoice.showNumberRequested = invoice.invoiceType !== 'receivedInvoice'
 
-    logger.debug(`invoice before XML: ${invoice}`)
+    logger.debug(`invoice before XML: ${JSON.stringify(invoice)}`)
   }
   return handlebars.compile(template)(invoices)
 }
