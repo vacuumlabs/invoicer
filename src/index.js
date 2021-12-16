@@ -1,3 +1,4 @@
+import contentDisposition from 'content-disposition'
 import express from 'express'
 import bodyParser from 'body-parser'
 import logger from 'winston'
@@ -68,10 +69,8 @@ function invoice(req, res) {
     .create(htmlInvoice, {format: 'A4'})
     .toBuffer((err, buffer) => {
       if (err) logger.warn('PDF conversion failed')
-      const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}`
-      res.set({
-        'Content-Disposition': `attachment; filename="${fileName}.pdf"`,
-      })
+      const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}.pdf`
+      res.setHeader('Content-Disposition', contentDisposition(fileName))
       res.status(200).send(buffer)
     })
 }
