@@ -245,8 +245,11 @@ async function sendInvoices(invoices, comment, language, bot) {
 }
 
 const formatInvoice = (invoice) => {
-  const trimPad = (str, l) =>
-    (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l)
+  const trimPad = (str, l) => {
+    // if the string is empty, pad with '-' - space-only strings in backticks can't be formatted by Slack properly
+    const fillChar = str ? ' ' : '-'
+    return (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l, fillChar)
+  }
 
   const [date, cost, user, partner] = [
     invoice.issueDate.padEnd(10),
