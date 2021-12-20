@@ -64,7 +64,7 @@ export const handleMessage = async (message) => {
     }
   } catch (e) {
     logger.error(`error in handleMessage: ${e}`)
-    await showError(apiState, message.channel, 'Something went wrong.')
+    await showError(apiState, message.channel, `Something went wrong. Error info: \`${e}\``)
   }
 }
 

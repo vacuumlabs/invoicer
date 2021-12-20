@@ -37,7 +37,7 @@ export async function showError(state, channel, msg, ts = null) {
       {
         type: 'section',
         text: {
-          type: 'plain_text',
+          type: 'mrkdwn',
           text: `:exclamation: ${msg}`,
         },
       },
