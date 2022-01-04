@@ -272,8 +272,8 @@ const texts = {
     selfInvoice: 'Invoice created by customer',
     selfCreditNote: 'Credit note created by customer',
     notTaxPayer: 'Supplier is not a VAT payer.',
-    taxPaysCustomerInvoice: 'Delivery of service takes place in a different EU member state, according to VAT bill § 15 resp. § 16. Person responsible for tax payment is the recipient.',
-    taxPaysCustomerCreditNote: 'Delivery of service takes place in a different EU member state, according to VAT bill § 15 resp. § 16. Person responsible for tax payment is the recipient.',
+    taxPaysCustomerInvoice: 'Delivery of service takes place in a different EU member state. Person responsible for tax payment is the recipient.',
+    taxPaysCustomerCreditNote: 'Delivery of service takes place in a different EU member state. Person responsible for tax payment is the recipient.',
   },
 }
 
