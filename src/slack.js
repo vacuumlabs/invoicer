@@ -1,6 +1,5 @@
 import c from './config'
 import logger from 'winston'
-import {apiCall, apiCallMultipart, showError} from './slackApi'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
@@ -9,6 +8,7 @@ import pdf from 'html-pdf'
 import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
+import {App, ExpressReceiver} from '@slack/bolt'
 
 export const ACTION_ID_SEND_SK = 'send_sk'
 export const ACTION_ID_SEND_EN = 'send_en'
@@ -35,10 +35,13 @@ const isCSVUpload = (event) => (
   event.files[0].filetype === 'csv'
 )
 
+export const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
+export const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extendedErrorHandler: true})
+
 /**
  * @param {import('@slack/bolt').KnownEventFromType<"message">} message
  */
-export const handleMessage = async (message) => {
+export const handleMessage = async (message, say) => {
   try {
     logger.info('message event')
     logger.verbose(JSON.stringify(message))
@@ -60,7 +63,7 @@ export const handleMessage = async (message) => {
           botPendingInvoice.confirmation.channel,
         )
       }
-      await handleCSVUpload(message, bot)
+      await handleCSVUpload(message, bot, say)
     }
   } catch (e) {
     logger.error(`error in handleMessage: ${e}`)
@@ -118,7 +121,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
   const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
-    await apiCall(apiState, 'chat.update', {
+    await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
         {
@@ -134,7 +137,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, action.value, bot)
       .catch((e) => showError(apiState, channel, 'Something went wrong.'))
 
-    await apiCall(apiState, 'chat.update', {
+    await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
         {
@@ -152,7 +155,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
 }
 
 async function getChannelForUserID(userID) {
-  const channel = await apiCall(apiState, 'conversations.open', {users: userID})
+  const channel = await boltApp.client.conversations.open({users: userID})
   if (channel.ok) {
     return (channel.channel.id)
   } else {
@@ -182,18 +185,12 @@ async function sendPdf(htmlInvoice, invoice, bot) {
 async function sendXML(invoices, title, name, bot) {
   const filename = `${name}.xml`
 
-  await apiCallMultipart(apiState, 'files.upload', {
+  await boltApp.client.files.upload({
     title: `${title}.xml`,
     filename,
     channels: bot.channel,
     initial_comment: 'Pohoda XML import',
-    file: {
-      value: renderXML({invoices}),
-      options: {
-        filename,
-        contentType: 'application/xml',
-      },
-    },
+    content: renderXML({invoices}),
   })
 }
 
@@ -208,7 +205,7 @@ async function sendInvoiceToUser(invoice, comment, language, bot) {
   const channelId = await getChannelForUserID(invoice.slackId)
 
   if (channelId) {
-    await apiCall(apiState, 'chat.postMessage', {
+    await boltApp.client.chat.postMessage({
       channel: channelId,
       text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
     })
@@ -237,7 +234,7 @@ async function sendInvoices(invoices, comment, language, bot) {
       await showError(apiState, bot.channel, failMessage, ts)
     }
   }
-  await apiCall(apiState, 'chat.postMessage', {
+  await boltApp.client.chat.postMessage({
     channel: bot.channel,
     as_user: true,
     text: `Successfully delivered ${count} invoices.`,
@@ -265,7 +262,7 @@ const formatInvoice = (invoice) => {
   return `${date} ${cost} ${user} ${partner} ${direction} <${`${url}&lang=SK`}|📩 SK> <${`${url}&lang=EN`}|📩 EN>`
 }
 
-async function handleCSVUpload(event, bot) {
+async function handleCSVUpload(event, bot, say) {
   const file = event.files[0]
   logger.verbose(`handling CSV upload of file: ${JSON.stringify(file)}`)
 
@@ -279,14 +276,14 @@ async function handleCSVUpload(event, bot) {
   const formattedInvoices = invoices.map(formatInvoice).join('\n')
 
   // message - invoice list
-  await apiCall(apiState, 'chat.postMessage', {
+  await say({
     channel: bot.channel,
     as_user: true,
     text: `*Invoices summary*\n${formattedInvoices}`,
   })
 
   // message - actions
-  const confirmation = await apiCall(apiState, 'chat.postMessage', {
+  const confirmation = await say({
     channel: bot.channel,
     as_user: true,
     text: 'Should I send the invoices above?',
@@ -377,4 +374,21 @@ async function handleCSVUpload(event, bot) {
     confirmation,
     comment: `${event.text || 'Your monthly invoice from VacuumLabs:'}\n_link_`,
   }
+}
+
+async function showError(state, channel, msg, ts = null) {
+  await boltApp.client.chat[ts ? 'update' : 'postMessage']({
+    channel,
+    ts,
+    as_user: true,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `:exclamation: ${msg}`,
+        },
+      },
+    ],
+  })
 }

@@ -3,11 +3,10 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import logger from 'winston'
 import pdf from 'html-pdf'
-import {App, ExpressReceiver} from '@slack/bolt'
 
 import c from './config'
 import renderInvoice from './invoice'
-import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, handleAction, handleMessage, initState} from './slack'
+import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, handleAction, handleMessage, initState, boltReceiver, boltApp} from './slack'
 import {initStorage} from './storage'
 import {routes as r, shortNames} from './routes'
 
@@ -77,14 +76,8 @@ function invoice(req, res) {
 
 app.get(r.invoice, bodyParser.urlencoded(), invoice)
 
-// inspired by: https://github.com/slackapi/bolt-js/issues/212
-// done the same way as in AskMeBot
-const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
-
 app.use(r.events, boltReceiver.router)
 app.use(r.actions, boltReceiver.router)
-
-const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extendedErrorHandler: true})
 
 /**
   @type import('@slack/bolt/dist/App').ExtendedErrorHandler
@@ -95,8 +88,7 @@ const errorHandler = async ({error: {code, message, name, req, stack}, context, 
 
 boltApp.error(errorHandler)
 
-boltApp.event('message', ({message}) => handleMessage(message))
-
+boltApp.event('message', ({message, say}) => handleMessage(message, say))
 boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID_CANCEL}`, 'g'), (event) => handleAction(event))
 
 ;(async function() {
