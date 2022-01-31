@@ -6,7 +6,7 @@ Creates, stores and sends invoices.
 
 - admin uploads CSV file with invoices to administration Slack channel
 - bot reads the file, responds with confirm/cancel buttons and links to download invoice in PDF or Pohoda XML file for every user
-- in admin confirms, bot creates PDF invoices according to the input data and stores them on Google drive
+- if admin confirms, bot creates PDF invoices according to the input data and stores them on Google drive
   - bot creates folder for every user and (if enabled) folder for every year
 - (if enabled) bot sends direct message on Slack to user with a link to PDF invoice on the Google drive
 - bot responds to admin with list of users for which generating of invoice failed
@@ -38,6 +38,23 @@ Creates, stores and sends invoices.
 - `log_level` _(optional, default - debug if NODE_ENV is development, error otherwise)_ - winston level of logs that are written
 - `PORT` - port number where server starts, provided by Heroku automatically
 
+### Local server
+
+You'll need to make your server reachable from outside world - you can use [ngrok](https://ngrok.com/) or similar services.
+
+Run ngrok (this actually runs `ngrok http 8000`):
+```
+$ yarn ngrok
+```
+
+After that, copy your ngrok url into the Slack app's ***Interactivity & Shortcuts*** and ***Event Subscriptions*** configuration as Request URL, e.g. `https://cb47f7c1.ngrok.io/actions` - don't forget the `<url>/actions` route or `<url>/events` respectively. 
+
+Run the server:
+```
+$ yarn dev
+```
+
+You should be able to create and send invoices through your *InvoiceBot* instance now.
 ## Production environment
 
 App is deployed to Heroku _https://dashboard.heroku.com/apps/vacuumlabs-invoicebot_ . Every merge to `master` is automatically deployed to production.
