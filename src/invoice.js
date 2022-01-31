@@ -1,5 +1,9 @@
 import handlebars from 'handlebars'
 import handlebarsIntl from 'handlebars-intl'
+import {shortNames} from './routes'
+import contentDisposition from 'content-disposition'
+import logger from 'winston'
+import pdf from 'html-pdf'
 
 handlebarsIntl.registerWith(handlebars)
 
@@ -303,7 +307,7 @@ const domesticCountries = [
   'United Kingdom',
 ]
 
-export default function invoice(_context, language) {
+export default function renderInvoice(_context, language) {
   const context = {..._context}
 
   context.domestic = context.vendorCountry === context.clientCountry
@@ -322,4 +326,24 @@ export default function invoice(_context, language) {
   return handlebars.compile(template)(context, {data: {intl: {
     locales: 'en-US',
   }}})
+}
+
+export function query2invoice(query) {
+  const invoice = query.id ? {...shortNames[query.id]} : JSON.parse(query.invoice)
+  invoice.issueDate = Date.parse(invoice.issueDate)
+  invoice.paymentDate = Date.parse(invoice.paymentDate)
+  return invoice
+}
+
+export function invoiceHandler(req, res) {
+  const invoiceData = query2invoice(req.query)
+  const htmlInvoice = renderInvoice(invoiceData, req.query.lang)
+  pdf
+    .create(htmlInvoice, {format: 'A4'})
+    .toBuffer((err, buffer) => {
+      if (err) logger.warn('PDF conversion failed')
+      const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}.pdf`
+      res.setHeader('Content-Disposition', contentDisposition(fileName))
+      res.status(200).send(buffer)
+    })
 }
