@@ -7,8 +7,7 @@
   "author": "Samuel Hapák <samuel.hapak@gmail.com>",
   "license": "Unlicense",
   "scripts": {
-    "dev": "babel-node -- src/csv2invoices.js",
-    "test": "babel-node -- ./test.js",
+    "dev": "babel-node -- src/index.js",
     "eslint": "eslint src",
     "build": "babel src -d dist",
     "start": "node -- dist/index.js",
