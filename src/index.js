@@ -4,7 +4,8 @@ import logger from 'winston'
 
 import c from './config'
 import {invoiceHandler} from './invoice'
-import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, handleAction, handleMessage, initState, boltReceiver, boltApp} from './slack'
+import {handleAction, handleMessage, boltReceiver, boltApp} from './slack'
+import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK} from './slackBlocks'
 import {initStorage} from './storage'
 import {routes as r} from './routes'
 
