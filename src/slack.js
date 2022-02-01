@@ -117,13 +117,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'plain_text',
-            text: ':woman: Sending invoice...',
-          },
-        },
+        getSectionBlock('plain_text', ':woman: Sending invoice...'),
       ],
     })
 
@@ -133,13 +127,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'plain_text',
-            text: ':woman: Invoices sent successfully.',
-          },
-        },
+        getSectionBlock('plain_text', ':woman: Invoices sent successfully.'),
       ],
     })
   } else { // action_id === 'cancel'
@@ -281,13 +269,7 @@ async function handleCSVUpload(event, bot, say) {
     as_user: true,
     text: 'Should I send the invoices above?',
     blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: '*Should I send the invoices above?*',
-        },
-      },
+      getSectionBlock('mrkdwn', '*Should I send the invoices above?*'),
       {
         type: 'actions',
         block_id: `${event.ts}`,
@@ -358,7 +340,7 @@ async function handleCSVUpload(event, bot, say) {
           },
         ],
       },
-    ],
+    ]
   })
 
   pendingInvoice[bot.channel] = {
@@ -375,13 +357,17 @@ async function showError(channel, msg, ts = null) {
     ts,
     as_user: true,
     blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `:exclamation: ${msg}`,
-        },
-      },
+      getSectionBlock('mrkdwn', `:exclamation: ${msg}`),
     ],
   })
+}
+
+function getSectionBlock(textType, text) {
+  return {
+    type: 'section',
+    text: {
+      type: textType,
+      text,
+    },
+  }
 }
