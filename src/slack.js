@@ -9,10 +9,7 @@ import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 import {App, ExpressReceiver} from '@slack/bolt'
-
-export const ACTION_ID_SEND_SK = 'send_sk'
-export const ACTION_ID_SEND_EN = 'send_en'
-export const ACTION_ID_CANCEL = 'cancel'
+import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, sectionBlock, sendInvoicesButton, cancelButton} from './slackBlocks'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -117,7 +114,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        getSectionBlock('plain_text', ':woman: Sending invoice...'),
+        sectionBlock('plain_text', ':woman: Sending invoice...'),
       ],
     })
 
@@ -127,7 +124,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        getSectionBlock('plain_text', ':woman: Invoices sent successfully.'),
+        sectionBlock('plain_text', ':woman: Invoices sent successfully.'),
       ],
     })
   } else { // action_id === 'cancel'
@@ -269,75 +266,14 @@ async function handleCSVUpload(event, bot, say) {
     as_user: true,
     text: 'Should I send the invoices above?',
     blocks: [
-      getSectionBlock('mrkdwn', '*Should I send the invoices above?*'),
+      sectionBlock('mrkdwn', '*Should I send the invoices above?*'),
       {
         type: 'actions',
         block_id: `${event.ts}`,
         elements: [
-          {
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: `Send ${invoices.length} invoices`,
-            },
-            action_id: ACTION_ID_SEND_SK,
-            value: 'SK',
-            style: 'primary',
-            confirm: {
-              title: {
-                type: 'plain_text',
-                text: 'Are you sure?',
-              },
-              text: {
-                type: 'plain_text',
-                text: 'Do you really want to send these Slovak invoices?',
-              },
-              confirm: {
-                type: 'plain_text',
-                text: 'Yes, send them all',
-              },
-              deny: {
-                type: 'plain_text',
-                text: 'No',
-              },
-            },
-          },
-          {
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: `Send ${invoices.length} invoices (EN)`,
-            },
-            action_id: ACTION_ID_SEND_EN,
-            value: 'EN',
-            confirm: {
-              title: {
-                type: 'plain_text',
-                text: 'Are you sure?',
-              },
-              text: {
-                type: 'plain_text',
-                text: 'Do you really want to send these English invoices?',
-              },
-              confirm: {
-                type: 'plain_text',
-                text: 'Yes, send them all',
-              },
-              deny: {
-                type: 'plain_text',
-                text: 'No',
-              },
-            },
-          },
-          {
-            type: 'button',
-            text: {
-              type: 'plain_text',
-              text: 'Cancel',
-            },
-            action_id: ACTION_ID_CANCEL,
-            style: 'danger',
-          },
+          sendInvoicesButton(invoices.length, 'SK'),
+          sendInvoicesButton(invoices.length, 'EN'),
+          cancelButton(),
         ],
       },
     ]
@@ -357,17 +293,7 @@ async function showError(channel, msg, ts = null) {
     ts,
     as_user: true,
     blocks: [
-      getSectionBlock('mrkdwn', `:exclamation: ${msg}`),
+      sectionBlock('mrkdwn', `:exclamation: ${msg}`),
     ],
   })
-}
-
-function getSectionBlock(textType, text) {
-  return {
-    type: 'section',
-    text: {
-      type: textType,
-      text,
-    },
-  }
 }
