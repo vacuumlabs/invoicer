@@ -20,14 +20,7 @@ const request = _request.defaults({headers: {
   Authorization: `Bearer ${c.slack.botToken}`,
 }})
 
-let apiState
 const pendingInvoice = {}
-
-export const initState = (token) => {
-  apiState = {
-    token,
-  }
-}
 
 const isCSVUpload = (event) => (
   event.files &&
@@ -67,7 +60,7 @@ export const handleMessage = async (message, say) => {
     }
   } catch (e) {
     logger.error(`error in handleMessage: ${e}`)
-    await showError(apiState, message.channel, `Something went wrong. Error info: \`${e}\``)
+    await showError(message.channel, `Something went wrong. Error info: \`${e}\``)
   }
 }
 
@@ -100,7 +93,7 @@ export const handleAction = async ({action, body, ack}) => {
       pendingInvoice[channelId] = null
     } else {
       logger.warn('pending invoice error', botPendingInvoice, action.block_id)
-      await showError(apiState, channelId,
+      await showError(channelId,
         'The operation has timed out. Please, re-upload your CSV file with invoices.',
         body.message.ts
       )
@@ -111,7 +104,7 @@ export const handleAction = async ({action, body, ack}) => {
 }
 
 async function cancelInvoices(ts, channel) {
-  await showError(apiState, channel, 'Invoices canceled', ts)
+  await showError(channel, 'Invoices canceled', ts)
 }
 
 /**
@@ -135,7 +128,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     })
 
     await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, action.value, bot)
-      .catch((e) => showError(apiState, channel, 'Something went wrong.'))
+      .catch((e) => showError(channel, 'Something went wrong.'))
 
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
@@ -229,9 +222,9 @@ async function sendInvoices(invoices, comment, language, bot) {
     if (success) {
       count++
     } else {
-      if (!ts) ts = (await showError(apiState, bot.channel, failMessage)).ts
+      if (!ts) ts = (await showError(bot.channel, failMessage)).ts
       failMessage += `${i.user}\n`
-      await showError(apiState, bot.channel, failMessage, ts)
+      await showError(bot.channel, failMessage, ts)
     }
   }
   await boltApp.client.chat.postMessage({
@@ -376,7 +369,7 @@ async function handleCSVUpload(event, bot, say) {
   }
 }
 
-async function showError(state, channel, msg, ts = null) {
+async function showError(channel, msg, ts = null) {
   await boltApp.client.chat[ts ? 'update' : 'postMessage']({
     channel,
     ts,
