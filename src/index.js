@@ -32,8 +32,6 @@ boltApp.event('message', ({message, say}) => handleMessage(message, say))
 boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID_CANCEL}`, 'g'), (event) => handleAction(event))
 
 ;(async function() {
-  initState(c.slack.botToken)
-
   app.listen(c.port, () =>
     logger.log('info', `App started on localhost:${c.port}.`)
   )
