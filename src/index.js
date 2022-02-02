@@ -1,5 +1,4 @@
-import express from 'express'
-import bodyParser from 'body-parser'
+import express, {urlencoded} from 'express'
 import logger from 'winston'
 
 import c from './config'
@@ -15,7 +14,7 @@ logger.setLevels(logger.config.npm.levels)
 
 const app = express()
 
-app.get(r.invoice, bodyParser.urlencoded(), invoiceHandler)
+app.get(r.invoice, urlencoded(), invoiceHandler)
 
 app.use(r.events, boltReceiver.router)
 app.use(r.actions, boltReceiver.router)
