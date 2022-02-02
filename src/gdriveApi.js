@@ -12,7 +12,7 @@ const drive = google.drive('v3')
 
 const folderIdByPath = {}
 
-export async function init(config) {
+export function init(config) {
   logger.log('verbose', 'gdrive - init')
 
   const key = Buffer.from(config.key, 'base64').toString()

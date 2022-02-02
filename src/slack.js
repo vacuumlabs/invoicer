@@ -26,7 +26,11 @@ const isCSVUpload = (event) => (
 )
 
 export const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
-export const boltApp = new App({token: c.slack.botToken, receiver: boltReceiver, extendedErrorHandler: true})
+export const boltApp = new App({
+  token: c.slack.botToken,
+  receiver: boltReceiver,
+  extendedErrorHandler: true,
+})
 
 /**
  * @param {import('@slack/bolt').KnownEventFromType<"message">} message
@@ -62,7 +66,8 @@ export const handleMessage = async (message, say) => {
 }
 
 /**
- * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackActionMiddlewareArgs<import('@slack/bolt').SlackAction>>
+ * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackActionMiddlewareArgs
+ * <import('@slack/bolt').SlackAction>>
  */
 export const handleAction = async ({action, body, ack}) => {
   try {
@@ -92,7 +97,7 @@ export const handleAction = async ({action, body, ack}) => {
       logger.warn('pending invoice error', botPendingInvoice, action.block_id)
       await showError(channelId,
         'The operation has timed out. Please, re-upload your CSV file with invoices.',
-        body.message.ts
+        body.message.ts,
       )
     }
   } catch (e) {
@@ -118,8 +123,11 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
       ],
     })
 
-    await sendInvoices(botPendingInvoice.invoices, botPendingInvoice.comment, action.value, bot)
-      .catch((e) => showError(channel, 'Something went wrong.'))
+    await sendInvoices(
+      botPendingInvoice.invoices,
+      botPendingInvoice.comment,
+      action.value, bot,
+    ).catch((e) => showError(channel, 'Something went wrong.'))
 
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
@@ -221,7 +229,8 @@ async function sendInvoices(invoices, comment, language, bot) {
 
 const formatInvoice = (invoice) => {
   const trimPad = (str, l) => {
-    // if the string is empty, pad with '-' - space-only strings in backticks can't be formatted by Slack properly
+    // if the string is empty, pad with '-' - space-only strings in backticks
+    // can't be formatted by Slack properly
     const fillChar = str ? ' ' : '-'
     return (str.length > l ? `${str.substring(0, l - 1)}~` : str).padEnd(l, fillChar)
   }
@@ -276,7 +285,7 @@ async function handleCSVUpload(event, bot, say) {
           cancelButton(),
         ],
       },
-    ]
+    ],
   })
 
   pendingInvoice[bot.channel] = {
