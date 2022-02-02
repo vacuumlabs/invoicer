@@ -10,7 +10,14 @@ export default transenv()(({str, bool, num}) => {
       throw new Error(`Invalid bot config - ${botData}`)
     }
 
-    const [channel, storageRootFolder, storageUserFolder, adminEmails, sendOnSlack, groupByYear] = fields
+    const [
+      channel,
+      storageRootFolder,
+      storageUserFolder,
+      adminEmails,
+      sendOnSlack,
+      groupByYear,
+    ] = fields
 
     acc[channel] = {
       channel,

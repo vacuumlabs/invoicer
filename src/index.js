@@ -23,7 +23,7 @@ app.use(r.actions, boltReceiver.router)
 /**
   @type import('@slack/bolt/dist/App').ExtendedErrorHandler
 */
-const errorHandler = async ({error: {code, message, name, req, stack}, context, body}) => {
+const errorHandler = ({error: {code, message, name, req, stack}, context, body}) => {
   logger.error(`code: ${code}, message: ${message}, name: ${name}, req: ${JSON.stringify(req)}, stack: ${stack}, context: ${JSON.stringify(context)}, body: ${JSON.stringify(body)}`)
 }
 
@@ -34,7 +34,7 @@ boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID
 
 ;(async function() {
   app.listen(c.port, () =>
-    logger.log('info', `App started on localhost:${c.port}.`)
+    logger.log('info', `App started on localhost:${c.port}.`),
   )
 
   await Promise.all([

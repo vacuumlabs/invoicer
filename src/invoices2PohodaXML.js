@@ -4,11 +4,11 @@ import _ from 'lodash'
 import logger from 'winston'
 
 handlebars.registerHelper('XMLDate', (context) =>
-  new Date(context).toISOString().slice(0, 10)
+  new Date(context).toISOString().slice(0, 10),
 )
 
 handlebars.registerHelper('toFixed2', (context) =>
-  Number(context).toFixed(2)
+  Number(context).toFixed(2),
 )
 
 const template = `
