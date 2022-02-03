@@ -10,7 +10,7 @@
     "dev": "babel-node -- src/index.js",
     "eslint": "eslint src",
     "build": "babel src -d dist",
-    "start": "node -- dist/index.js",
+    "start": "node --max-old-space-size=4096 -- dist/index.js",
     "start-icu": "node --icu-data-dir=./node_modules/full-icu dist/index.js",
     "ngrok": "ngrok http 8000"
   },
