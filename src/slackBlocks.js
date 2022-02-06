@@ -12,21 +12,22 @@ export const sectionBlock = (textType, text) => {
   }
 }
 
-export const sendInvoicesButton = (invoicesLength, language) => {
+export const sendInvoicesButton = (invoicesLength, language, sendOnSlack) => {
+  const [action, capitalizedAction] = sendOnSlack ? ['send', 'Send'] : ['upload', 'Upload']
   const props = {
     SK: {
-      buttonLabel: `Send ${invoicesLength} invoices`,
+      buttonLabel: `${capitalizedAction} ${invoicesLength} invoices`,
       actionId: ACTION_ID_SEND_SK,
-      confirmationQuestion: 'Do you really want to send these Slovak invoices?',
+      confirmationQuestion: `Do you really want to ${action} these Slovak invoices?`,
       additionalFields: {
         style: 'primary',
       },
     },
     EN: {
-      buttonLabel: `Send ${invoicesLength} invoices (EN)`,
+      buttonLabel: `${capitalizedAction} ${invoicesLength} invoices (EN)`,
       actionId: ACTION_ID_SEND_EN,
       confirmationQuestion:
-        'Do you really want to send these English invoices?',
+        `Do you really want to ${action} these English invoices?`,
     },
   }
 
@@ -51,7 +52,7 @@ export const sendInvoicesButton = (invoicesLength, language) => {
         },
         confirm: {
           type: 'plain_text',
-          text: 'Yes, send them all',
+          text: `Yes, ${action} them all`,
         },
         deny: {
           type: 'plain_text',

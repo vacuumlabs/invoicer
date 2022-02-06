@@ -119,7 +119,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        sectionBlock('plain_text', ':woman: Sending invoice...'),
+        sectionBlock('plain_text', `:woman: ${bot.sendOnSlack ? 'sending' : 'uploading'} invoice...`),
       ],
     })
 
@@ -132,7 +132,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts, as_user: true,
       blocks: [
-        sectionBlock('plain_text', ':woman: Invoices sent successfully.'),
+        sectionBlock('plain_text', `:woman: Invoices ${bot.sendOnSlack ? 'sent' : 'uploaded'} successfully.`),
       ],
     })
   } else { // action_id === 'cancel'
@@ -269,19 +269,23 @@ async function handleCSVUpload(event, bot, say) {
     text: `*Invoices summary*\n${formattedInvoices}`,
   })
 
+  const message = bot.sendOnSlack
+  ? 'Should I send the invoices above?'
+  : 'Should I upload the invoices above to Google Drive?'
+
   // message - actions
   const confirmation = await say({
     channel: bot.channel,
     as_user: true,
-    text: 'Should I send the invoices above?',
+    text: message,
     blocks: [
-      sectionBlock('mrkdwn', '*Should I send the invoices above?*'),
+      sectionBlock('mrkdwn', `*${message}*`),
       {
         type: 'actions',
         block_id: `${event.ts}`,
         elements: [
-          sendInvoicesButton(invoices.length, 'SK'),
-          sendInvoicesButton(invoices.length, 'EN'),
+          sendInvoicesButton(invoices.length, 'SK', bot.sendOnSlack),
+          sendInvoicesButton(invoices.length, 'EN', bot.sendOnSlack),
           cancelButton(),
         ],
       },
