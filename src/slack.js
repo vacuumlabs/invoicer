@@ -117,7 +117,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await boltApp.client.chat.update({
-      channel, ts, as_user: true,
+      channel, ts,
       blocks: [
         sectionBlock('plain_text', `:woman: ${bot.sendOnSlack ? 'sending' : 'uploading'} invoice...`),
       ],
@@ -130,7 +130,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     ).catch((e) => showError(channel, 'Something went wrong.'))
 
     await boltApp.client.chat.update({
-      channel, ts, as_user: true,
+      channel, ts,
       blocks: [
         sectionBlock('plain_text', `:woman: Invoices ${bot.sendOnSlack ? 'sent' : 'uploaded'} successfully.`),
       ],
@@ -222,8 +222,7 @@ async function sendInvoices(invoices, comment, language, bot) {
   }
   await boltApp.client.chat.postMessage({
     channel: bot.channel,
-    as_user: true,
-    text: `Successfully delivered ${count} invoices.`,
+    text: `Successfully ${bot.sendOnSlack ? 'delivered' : 'uploaded'} ${count} invoices.`,
   })
 }
 
@@ -265,7 +264,6 @@ async function handleCSVUpload(event, bot, say) {
   // message - invoice list
   await say({
     channel: bot.channel,
-    as_user: true,
     text: `*Invoices summary*\n${formattedInvoices}`,
   })
 
@@ -276,7 +274,6 @@ async function handleCSVUpload(event, bot, say) {
   // message - actions
   const confirmation = await say({
     channel: bot.channel,
-    as_user: true,
     text: message,
     blocks: [
       sectionBlock('mrkdwn', `*${message}*`),
@@ -304,7 +301,6 @@ async function showError(channel, msg, ts = null) {
   await boltApp.client.chat[ts ? 'update' : 'postMessage']({
     channel,
     ts,
-    as_user: true,
     blocks: [
       sectionBlock('mrkdwn', `:exclamation: ${msg}`),
     ],
