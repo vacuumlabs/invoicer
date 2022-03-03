@@ -297,7 +297,7 @@ async function handleCSVUpload(event, bot, say) {
 }
 
 async function showError(channel, msg, ts = null) {
-  await boltApp.client.chat[ts ? 'update' : 'postMessage']({
+  return await boltApp.client.chat[ts ? 'update' : 'postMessage']({
     channel,
     ts,
     blocks: [
