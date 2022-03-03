@@ -12,8 +12,9 @@ export const sectionBlock = (textType, text) => {
   }
 }
 
-export const sendInvoicesButton = (invoicesLength, language, sendOnSlack) => {
-  const [action, capitalizedAction] = sendOnSlack ? ['send', 'Send'] : ['upload', 'Upload']
+export const sendInvoicesButton = (invoicesLength, language) => {
+  const action = 'upload and send'
+  const capitalizedAction = 'Upload and send'
   const props = {
     SK: {
       buttonLabel: `${capitalizedAction} ${invoicesLength} invoices`,

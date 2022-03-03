@@ -113,13 +113,15 @@ async function cancelInvoices(ts, channel) {
  * @param {import('@slack/bolt').ButtonAction} action
  */
 async function handleInvoicesAction(action, bot, botPendingInvoice) {
+  // when action is handled, that means the buttons were posted in the first place,
+  // so otherwise undefined `confirmation` is guaranteed to be present
   const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await boltApp.client.chat.update({
       channel, ts,
       blocks: [
-        sectionBlock('plain_text', `:woman: ${bot.sendOnSlack ? 'sending' : 'uploading'} invoice...`),
+        sectionBlock('plain_text', ':woman: uploading and sending invoice...'),
       ],
     })
 
@@ -132,7 +134,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     await boltApp.client.chat.update({
       channel, ts,
       blocks: [
-        sectionBlock('plain_text', `:woman: Invoices ${bot.sendOnSlack ? 'sent' : 'uploaded'} successfully.`),
+        sectionBlock('plain_text', ':woman: Invoices uploaded and sent successfully.'),
       ],
     })
   } else { // action_id === 'cancel'
@@ -183,10 +185,6 @@ async function sendXML(invoices, title, name, bot) {
 async function sendInvoiceToUser(invoice, comment, language, bot) {
   const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
-
-  if (!bot.sendOnSlack) {
-    return true
-  }
 
   const channelId = await getChannelForUserID(invoice.slackId)
 
@@ -267,9 +265,10 @@ async function handleCSVUpload(event, bot, say) {
     text: `*Invoices summary*\n${formattedInvoices}`,
   })
 
-  const message = bot.sendOnSlack
-  ? 'Should I send the invoices above?'
-  : 'Should I upload the invoices above to Google Drive?'
+  // don't send the second message with actions at all
+  if (!bot.sendOnSlack) return
+
+  const message = 'Should I upload the invoices above to Google Drive and send the to users on Slack?'
 
   // message - actions
   const confirmation = await say({
@@ -281,8 +280,8 @@ async function handleCSVUpload(event, bot, say) {
         type: 'actions',
         block_id: `${event.ts}`,
         elements: [
-          sendInvoicesButton(invoices.length, 'SK', bot.sendOnSlack),
-          sendInvoicesButton(invoices.length, 'EN', bot.sendOnSlack),
+          sendInvoicesButton(invoices.length, 'SK'),
+          sendInvoicesButton(invoices.length, 'EN'),
           cancelButton(),
         ],
       },
