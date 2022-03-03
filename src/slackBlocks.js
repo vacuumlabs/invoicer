@@ -33,34 +33,32 @@ export const sendInvoicesButton = (invoicesLength, language) => {
   }
 
   return {
-    ...props[language].additionalFields,
-    ...{
-      type: 'button',
+    type: 'button',
+    text: {
+      type: 'plain_text',
+      text: props[language].buttonLabel,
+    },
+    action_id: props[language].actionId,
+    value: language,
+    confirm: {
+      title: {
+        type: 'plain_text',
+        text: 'Are you sure?',
+      },
       text: {
         type: 'plain_text',
-        text: props[language].buttonLabel,
+        text: props[language].confirmationQuestion,
       },
-      action_id: props[language].actionId,
-      value: language,
       confirm: {
-        title: {
-          type: 'plain_text',
-          text: 'Are you sure?',
-        },
-        text: {
-          type: 'plain_text',
-          text: props[language].confirmationQuestion,
-        },
-        confirm: {
-          type: 'plain_text',
-          text: `Yes, ${action} them all`,
-        },
-        deny: {
-          type: 'plain_text',
-          text: 'No',
-        },
+        type: 'plain_text',
+        text: `Yes, ${action} them all`,
+      },
+      deny: {
+        type: 'plain_text',
+        text: 'No',
       },
     },
+    ...props[language].additionalFields,
   }
 }
 
