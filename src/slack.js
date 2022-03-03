@@ -34,6 +34,7 @@ export const boltApp = new App({
 
 /**
  * @param {import('@slack/bolt').KnownEventFromType<"message">} message
+ * @param {import("@slack/bolt").SayFn} say
  */
 export const handleMessage = async (message, say) => {
   try {
