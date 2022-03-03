@@ -268,7 +268,7 @@ async function handleCSVUpload(event, bot, say) {
   // don't send the second message with actions at all
   if (!bot.sendOnSlack) return
 
-  const message = 'Should I upload the invoices above to Google Drive and send the to users on Slack?'
+  const message = 'Should I upload the invoices above to Google Drive and send them to the users on Slack?'
 
   // message - actions
   const confirmation = await say({
