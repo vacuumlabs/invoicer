@@ -113,13 +113,15 @@ async function cancelInvoices(ts, channel) {
  * @param {import('@slack/bolt').ButtonAction} action
  */
 async function handleInvoicesAction(action, bot, botPendingInvoice) {
+  // when action is handled, that means the buttons were posted in the first place,
+  // so otherwise undefined `confirmation` is guaranteed to be present
   const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
     await boltApp.client.chat.update({
-      channel, ts, as_user: true,
+      channel, ts,
       blocks: [
-        sectionBlock('plain_text', ':woman: Sending invoice...'),
+        sectionBlock('plain_text', ':woman: uploading and sending invoice...'),
       ],
     })
 
@@ -130,9 +132,9 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
     ).catch((e) => showError(channel, 'Something went wrong.'))
 
     await boltApp.client.chat.update({
-      channel, ts, as_user: true,
+      channel, ts,
       blocks: [
-        sectionBlock('plain_text', ':woman: Invoices sent successfully.'),
+        sectionBlock('plain_text', ':woman: Invoices uploaded and sent successfully.'),
       ],
     })
   } else { // action_id === 'cancel'
@@ -184,10 +186,6 @@ async function sendInvoiceToUser(invoice, comment, language, bot) {
   const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
 
-  if (!bot.sendOnSlack) {
-    return true
-  }
-
   const channelId = await getChannelForUserID(invoice.slackId)
 
   if (channelId) {
@@ -222,8 +220,7 @@ async function sendInvoices(invoices, comment, language, bot) {
   }
   await boltApp.client.chat.postMessage({
     channel: bot.channel,
-    as_user: true,
-    text: `Successfully delivered ${count} invoices.`,
+    text: `Successfully uploaded and delivered ${count} invoices.`,
   })
 }
 
@@ -265,17 +262,20 @@ async function handleCSVUpload(event, bot, say) {
   // message - invoice list
   await say({
     channel: bot.channel,
-    as_user: true,
     text: `*Invoices summary*\n${formattedInvoices}`,
   })
+
+  // don't send the second message with actions at all
+  if (!bot.sendOnSlack) return
+
+  const message = 'Should I upload the invoices above to Google Drive and send them to the users on Slack?'
 
   // message - actions
   const confirmation = await say({
     channel: bot.channel,
-    as_user: true,
-    text: 'Should I send the invoices above?',
+    text: message,
     blocks: [
-      sectionBlock('mrkdwn', '*Should I send the invoices above?*'),
+      sectionBlock('mrkdwn', `*${message}*`),
       {
         type: 'actions',
         block_id: `${event.ts}`,
@@ -297,10 +297,9 @@ async function handleCSVUpload(event, bot, say) {
 }
 
 async function showError(channel, msg, ts = null) {
-  await boltApp.client.chat[ts ? 'update' : 'postMessage']({
+  return await boltApp.client.chat[ts ? 'update' : 'postMessage']({
     channel,
     ts,
-    as_user: true,
     blocks: [
       sectionBlock('mrkdwn', `:exclamation: ${msg}`),
     ],
