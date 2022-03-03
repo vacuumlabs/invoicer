@@ -4,7 +4,6 @@ import logger from 'winston'
 import c from './config'
 import {invoiceHandler} from './invoice'
 import {handleAction, handleMessage, boltReceiver, boltApp} from './slack'
-import {ACTION_ID_CANCEL, ACTION_ID_SEND_EN, ACTION_ID_SEND_SK} from './slackBlocks'
 import {initStorage} from './storage'
 import {routes as r} from './routes'
 
@@ -29,7 +28,7 @@ const errorHandler = ({error: {code, message, name, req, stack}, context, body})
 boltApp.error(errorHandler)
 
 boltApp.event('message', ({message, say}) => handleMessage(message, say))
-boltApp.action(new RegExp(`${ACTION_ID_SEND_SK}|${ACTION_ID_SEND_EN}|${ACTION_ID_CANCEL}`, 'g'), (event) => handleAction(event))
+boltApp.action(/.*/g, (event) => handleAction(event))
 
 ;(async function() {
   app.listen(c.port, () =>
