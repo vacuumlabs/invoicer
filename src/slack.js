@@ -220,7 +220,7 @@ async function sendInvoices(invoices, comment, language, bot) {
   }
   await boltApp.client.chat.postMessage({
     channel: bot.channel,
-    text: `Successfully ${bot.sendOnSlack ? 'delivered' : 'uploaded'} ${count} invoices.`,
+    text: `Successfully uploaded and delivered ${count} invoices.`,
   })
 }
 
