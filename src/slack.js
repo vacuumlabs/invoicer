@@ -183,10 +183,27 @@ async function sendInvoiceToUser(invoice, comment, language, bot) {
   const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
 
+  const channel = invoice.slackId
+  const text = comment.replace('_link_', `<${fileData.url}|${fileData.name}>`)
+
+  try {
+    // first try to send a message on classic VL workspace
     await boltApp.client.chat.postMessage({
-      channel: invoice.slackId,
-      text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
+      channel,
+      text,
     })
+  } catch (e) {
+    // if the error is 'channel_not_found', it may be because the user is on the Wincent workspace
+    // if not, rethrow
+    if (e.message !== 'An API error occurred: channel_not_found') throw e
+
+    // if the user is not found on VL workspace, try Wincent
+    await boltApp.client.chat.postMessage({
+      token: c.slack.botToken.wincent,
+      channel,
+      text,
+    })
+  }
 }
 
 async function sendInvoices(invoices, comment, language, bot) {
