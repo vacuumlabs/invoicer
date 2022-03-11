@@ -148,15 +148,6 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
   }
 }
 
-async function getChannelForUserID(userID) {
-  const channel = await boltApp.client.conversations.open({users: userID})
-  if (channel.ok) {
-    return (channel.channel.id)
-  } else {
-    return null
-  }
-}
-
 async function sendPdf(htmlInvoice, invoice, bot) {
   const stream = await new Promise((resolve, reject) => {
     pdf
@@ -192,16 +183,10 @@ async function sendInvoiceToUser(invoice, comment, language, bot) {
   const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
 
-  const channelId = await getChannelForUserID(invoice.slackId)
-
-  if (channelId) {
     await boltApp.client.chat.postMessage({
-      channel: channelId,
+      channel: invoice.slackId,
       text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
     })
-  } else {
-    throw new Error("Couldn't get channelId")
-  }
 }
 
 async function sendInvoices(invoices, comment, language, bot) {
