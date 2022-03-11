@@ -14,7 +14,7 @@ import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, sectionBlock, sendInvoicesButton, 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
 const request = _request.defaults({headers: {
-  Authorization: `Bearer ${c.slack.botToken}`,
+  Authorization: `Bearer ${c.slack.botToken.vacuumlabs}`,
 }})
 
 const pendingInvoice = {}
@@ -27,7 +27,7 @@ const isCSVUpload = (event) => (
 
 export const boltReceiver = new ExpressReceiver({signingSecret: c.slack.signingSecret, endpoints: '/'})
 export const boltApp = new App({
-  token: c.slack.botToken,
+  token: c.slack.botToken.vacuumlabs,
   receiver: boltReceiver,
   extendedErrorHandler: true,
 })

@@ -39,7 +39,10 @@ export default transenv()(({str, bool, num}) => {
     port: str('PORT'),
     host: str('host'),
     slack: {
-      botToken: str('slack_bot_token'),
+      botToken: {
+        vacuumlabs: str('slack_bot_token'),
+        wincent: str('slack_bot_token_wincent'),
+      },
       signingSecret: str('slack_bot_signing_secret'),
     },
     bots,
