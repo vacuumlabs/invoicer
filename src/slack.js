@@ -126,11 +126,16 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
       ],
     })
 
-    await sendInvoices(
-      botPendingInvoice.invoices,
-      botPendingInvoice.comment,
-      action.value, bot,
-    ).catch((e) => showError(channel, 'Something went wrong.'))
+    try {
+      await sendInvoices(
+        botPendingInvoice.invoices,
+        botPendingInvoice.comment,
+        action.value, bot,
+      )
+    } catch (e) {
+      logger.error(e)
+      await showError(channel, 'Something went wrong.')
+    }
 
     await boltApp.client.chat.update({
       channel, ts,
@@ -194,10 +199,8 @@ async function sendInvoiceToUser(invoice, comment, language, bot) {
       channel: channelId,
       text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
     })
-
-    return true
   } else {
-    return false
+    throw new Error("Couldn't get channelId")
   }
 }
 
@@ -206,14 +209,11 @@ async function sendInvoices(invoices, comment, language, bot) {
   let ts = null
   let count = 0
   for (const i of invoices) {
-    const success = await sendInvoiceToUser(i, comment, language, bot).catch((err) => {
-      logger.warn('Failed to send invoice', err)
-      return false
-    })
-
-    if (success) {
+    try {
+      await sendInvoiceToUser(i, comment, language, bot)
       count++
-    } else {
+    } catch (err)  {
+      logger.warn('Failed to send invoice', err)
       if (!ts) ts = (await showError(bot.channel, failMessage)).ts
       failMessage += `${i.user}\n`
       await showError(bot.channel, failMessage, ts)
