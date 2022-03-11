@@ -261,10 +261,7 @@ async function handleCSVUpload(event, bot, say) {
   const formattedInvoices = invoices.map(formatInvoice).join('\n')
 
   // message - invoice list
-  await say({
-    channel: bot.channel,
-    text: `*Invoices summary*\n${formattedInvoices}`,
-  })
+  await say(`*Invoices summary*\n${formattedInvoices}`)
 
   // don't send the second message with actions at all
   if (!bot.sendOnSlack) return
@@ -273,7 +270,6 @@ async function handleCSVUpload(event, bot, say) {
 
   // message - actions
   const confirmation = await say({
-    channel: bot.channel,
     text: message,
     blocks: [
       sectionBlock('mrkdwn', `*${message}*`),
