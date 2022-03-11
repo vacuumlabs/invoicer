@@ -301,8 +301,6 @@ async function showError(channel, msg, ts = null) {
   return await boltApp.client.chat[ts ? 'update' : 'postMessage']({
     channel,
     ts,
-    blocks: [
-      sectionBlock('mrkdwn', `:exclamation: ${msg}`),
-    ],
+    text: `:exclamation: ${msg}`,
   })
 }
