@@ -259,6 +259,11 @@ const formatInvoice = (invoice) => {
   return `${date} ${cost} ${user} ${partner} ${direction} <${`${url}&lang=SK`}|📩 SK> <${`${url}&lang=EN`}|📩 EN>`
 }
 
+/**
+ * @param {import("@slack/bolt").KnownEventFromType<"message">} event
+ * @param {{ sendOnSlack: boolean; channel: string; }} bot
+ * @param {import("@slack/bolt").SayFn} say
+ */
 async function handleCSVUpload(event, bot, say) {
   const file = event.files[0]
   logger.verbose(`handling CSV upload of file: ${JSON.stringify(file)}`)
