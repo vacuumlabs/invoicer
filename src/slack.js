@@ -9,7 +9,7 @@ import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 import {App, ExpressReceiver} from '@slack/bolt'
-import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, sectionBlock, sendInvoicesButton, cancelButton} from './slackBlocks'
+import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, sectionBlock, sendInvoicesButton, cancelButton, getButton, ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT, getActionsBlock} from './slackBlocks'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -70,7 +70,7 @@ export const handleMessage = async (message, say) => {
  * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackActionMiddlewareArgs
  * <import('@slack/bolt').SlackAction>>
  */
-export const handleAction = async ({action, body, ack}) => {
+export const handleAction = async ({action, body, ack, respond}) => {
   try {
     logger.info('action event')
     logger.info(JSON.stringify(action))
@@ -92,7 +92,30 @@ export const handleAction = async ({action, body, ack}) => {
     const botPendingInvoice = pendingInvoice[channelId]
 
     if (botPendingInvoice && botPendingInvoice.id === action.block_id) {
-      await handleInvoicesAction(action, bot, botPendingInvoice)
+      if ([ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT].includes(action.action_id)) {
+        botPendingInvoice.isWincent = action.action_id === ACTION_ID_WINCENT_BOT
+        const {invoices} = botPendingInvoice
+
+        const message = 'Should I upload the invoices above to Google Drive and send them to the users on Slack?'
+
+        await respond({
+          text: message,
+          blocks: [
+            sectionBlock('mrkdwn', `*${message}*`),
+            getActionsBlock({
+              block_id: `${botPendingInvoice.id}`,
+              elements: [
+                sendInvoicesButton(invoices.length, 'SK'),
+                sendInvoicesButton(invoices.length, 'EN'),
+                cancelButton(),
+              ],
+            }),
+          ],
+        })
+        return
+      }
+
+      await handleInvoicesAction(action, bot, botPendingInvoice, respond)
       pendingInvoice[channelId] = null
     } else {
       logger.warn('pending invoice error', botPendingInvoice, action.block_id)
@@ -113,7 +136,7 @@ async function cancelInvoices(ts, channel) {
 /**
  * @param {import('@slack/bolt').ButtonAction} action
  */
-async function handleInvoicesAction(action, bot, botPendingInvoice) {
+async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
   // when action is handled, that means the buttons were posted in the first place,
   // so otherwise undefined `confirmation` is guaranteed to be present
   const {confirmation: {channel, ts}} = botPendingInvoice
@@ -130,7 +153,10 @@ async function handleInvoicesAction(action, bot, botPendingInvoice) {
       await sendInvoices(
         botPendingInvoice.invoices,
         botPendingInvoice.comment,
-        action.value, bot,
+        action.value,
+        bot,
+        botPendingInvoice.isWincent,
+        respond,
       )
     } catch (e) {
       logger.error(e)
@@ -179,40 +205,24 @@ async function sendXML(invoices, title, name, bot) {
   })
 }
 
-async function sendInvoiceToUser(invoice, comment, language, bot) {
+async function sendInvoiceToUser(invoice, comment, language, bot, isWincent) {
   const htmlInvoice = renderInvoice(invoice, language)
   const fileData = await sendPdf(htmlInvoice, invoice, bot)
 
-  const channel = invoice.slackId
-  const text = comment.replace('_link_', `<${fileData.url}|${fileData.name}>`)
-
-  try {
-    // first try to send a message on classic VL workspace
-    await boltApp.client.chat.postMessage({
-      channel,
-      text,
-    })
-  } catch (e) {
-    // if the error is 'channel_not_found', it may be because the user is on the Wincent workspace
-    // if not, rethrow
-    if (e.message !== 'An API error occurred: channel_not_found') throw e
-
-    // if the user is not found on VL workspace, try Wincent
-    await boltApp.client.chat.postMessage({
-      token: c.slack.botToken.wincent,
-      channel,
-      text,
-    })
-  }
+  await boltApp.client.chat.postMessage({
+    token: isWincent ? c.slack.botToken.wincent : undefined,
+    channel: invoice.slackId,
+    text: comment.replace('_link_', `<${fileData.url}|${fileData.name}>`),
+  })
 }
 
-async function sendInvoices(invoices, comment, language, bot) {
+async function sendInvoices(invoices, comment, language, bot, isWincent, respond) {
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
   for (const i of invoices) {
     try {
-      await sendInvoiceToUser(i, comment, language, bot)
+      await sendInvoiceToUser(i, comment, language, bot, isWincent)
       count++
     } catch (err)  {
       logger.warn('Failed to send invoice', err)
@@ -268,22 +278,26 @@ async function handleCSVUpload(event, bot, say) {
   // don't send the second message with actions at all
   if (!bot.sendOnSlack) return
 
-  const message = 'Should I upload the invoices above to Google Drive and send them to the users on Slack?'
+  const message = 'Which bot should I use to send these invoices?'
 
-  // message - actions
   const confirmation = await say({
     text: message,
     blocks: [
       sectionBlock('mrkdwn', `*${message}*`),
-      {
-        type: 'actions',
+      getActionsBlock({
         block_id: `${event.ts}`,
         elements: [
-          sendInvoicesButton(invoices.length, 'SK'),
-          sendInvoicesButton(invoices.length, 'EN'),
+          getButton({
+            action_id: ACTION_ID_VL_BOT,
+            text: 'InvoiceBot',
+          }),
+          getButton({
+            action_id: ACTION_ID_WINCENT_BOT,
+            text: 'Wincent-InvoiceBot',
+          }),
           cancelButton(),
         ],
-      },
+      }),
     ],
   })
 

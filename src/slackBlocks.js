@@ -1,5 +1,7 @@
 export const ACTION_ID_SEND_SK = 'send_sk'
 export const ACTION_ID_SEND_EN = 'send_en'
+export const ACTION_ID_VL_BOT = 'vl_bot'
+export const ACTION_ID_WINCENT_BOT = 'wincent_bot'
 export const ACTION_ID_CANCEL = 'cancel'
 
 export const sectionBlock = (textType, text) => {
