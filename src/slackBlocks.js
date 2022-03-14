@@ -32,13 +32,15 @@ export const sendInvoicesButton = (invoicesLength, language) => {
     },
   }
 
+  const config = props[language]
+
   return {
     type: 'button',
     text: {
       type: 'plain_text',
-      text: props[language].buttonLabel,
+      text: config.buttonLabel,
     },
-    action_id: props[language].actionId,
+    action_id: config.actionId,
     value: language,
     confirm: {
       title: {
@@ -47,7 +49,7 @@ export const sendInvoicesButton = (invoicesLength, language) => {
       },
       text: {
         type: 'plain_text',
-        text: props[language].confirmationQuestion,
+        text: config.confirmationQuestion,
       },
       confirm: {
         type: 'plain_text',
@@ -58,7 +60,7 @@ export const sendInvoicesButton = (invoicesLength, language) => {
         text: 'No',
       },
     },
-    ...props[language].additionalFields,
+    ...config.additionalFields,
   }
 }
 
