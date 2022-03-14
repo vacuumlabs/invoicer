@@ -137,7 +137,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
   const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
-    await respond(':woman: uploading and sending invoice...')
+    await respond(':woman: Uploading and sending invoice... :spinner:')
 
     try {
       await sendInvoices(
@@ -214,7 +214,7 @@ async function sendInvoices(invoices, comment, language, bot, isWincent, respond
       await showError(bot.channel, failMessage, ts)
     }
   }
-  await respond(`Successfully uploaded and delivered ${count} invoices.`)
+  await respond(`:white_check_mark: Successfully uploaded and delivered ${count} invoices.`)
 }
 
 const formatInvoice = (invoice) => {
