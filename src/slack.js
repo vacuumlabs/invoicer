@@ -142,12 +142,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
   const {confirmation: {channel, ts}} = botPendingInvoice
 
   if ([ACTION_ID_SEND_SK, ACTION_ID_SEND_EN].includes(action.action_id)) {
-    await boltApp.client.chat.update({
-      channel, ts,
-      blocks: [
-        sectionBlock('plain_text', ':woman: uploading and sending invoice...'),
-      ],
-    })
+    await respond(':woman: uploading and sending invoice...')
 
     try {
       await sendInvoices(
@@ -162,13 +157,6 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
       logger.error(e)
       await showError(channel, 'Something went wrong.')
     }
-
-    await boltApp.client.chat.update({
-      channel, ts,
-      blocks: [
-        sectionBlock('plain_text', ':woman: Invoices uploaded and sent successfully.'),
-      ],
-    })
   } else { // action_id === 'cancel'
     await cancelInvoices(ts, channel)
   }
@@ -231,10 +219,7 @@ async function sendInvoices(invoices, comment, language, bot, isWincent, respond
       await showError(bot.channel, failMessage, ts)
     }
   }
-  await boltApp.client.chat.postMessage({
-    channel: bot.channel,
-    text: `Successfully uploaded and delivered ${count} invoices.`,
-  })
+  await respond(`Successfully uploaded and delivered ${count} invoices.`)
 }
 
 const formatInvoice = (invoice) => {
