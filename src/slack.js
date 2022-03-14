@@ -53,10 +53,8 @@ export const handleMessage = async (message, say) => {
       const botPendingInvoice = pendingInvoice[channelId]
       // cancel old invoice, it will be overwritten by a new one
       if (botPendingInvoice) {
-        await cancelInvoices(
-          botPendingInvoice.confirmation.ts,
-          botPendingInvoice.confirmation.channel,
-        )
+        const {channel, ts} = botPendingInvoice.confirmation
+        await showError(channel, 'Invoices canceled', ts)
       }
       await handleCSVUpload(message, bot, say)
     }
@@ -129,9 +127,6 @@ export const handleAction = async ({action, body, ack, respond}) => {
   }
 }
 
-async function cancelInvoices(ts, channel) {
-  await showError(channel, 'Invoices canceled', ts)
-}
 
 /**
  * @param {import('@slack/bolt').ButtonAction} action
@@ -158,7 +153,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
       await showError(channel, 'Something went wrong.')
     }
   } else { // action_id === 'cancel'
-    await cancelInvoices(ts, channel)
+    await showError(channel, 'Invoices canceled', ts)
   }
 }
 
