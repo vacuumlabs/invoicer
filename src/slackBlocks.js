@@ -12,6 +12,22 @@ export const sectionBlock = (textType, text) => {
   }
 }
 
+export const getButton = ({action_id, text, style}) => ({
+  type: 'button',
+  action_id,
+  text: {
+    type: 'plain_text',
+    text,
+  },
+  style,
+})
+
+export const getActionsBlock = ({block_id, elements}) => ({
+  type: 'actions',
+  block_id,
+  elements,
+})
+
 export const sendInvoicesButton = (invoicesLength, language) => {
   const action = 'upload and send'
   const capitalizedAction = 'Upload and send'
