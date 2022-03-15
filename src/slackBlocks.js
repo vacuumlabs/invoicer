@@ -150,7 +150,6 @@ export const HOME_BLOCKS = [
     elements: [
       getButton({
         text: 'Check my invoices in Messages',
-        style: 'primary',
         url: 'slack://app?team=T026LE24D&id=A96QM4M45&tab=messages',
       }),
     ],
