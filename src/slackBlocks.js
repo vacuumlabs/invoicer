@@ -47,7 +47,7 @@ export const getContextBlock = (text) => ({
 /**
  * @returns {import('@slack/bolt').Button}
  */
-export const getButton = ({action_id, text, style}) => ({
+export const getButton = ({action_id, text, style, url}) => ({
   type: 'button',
   action_id,
   text: {
@@ -55,6 +55,7 @@ export const getButton = ({action_id, text, style}) => ({
     text,
   },
   style,
+  url,
 })
 
 /**
@@ -147,6 +148,7 @@ export const HOME_BLOCKS = [
         action_id: 'go_to_messages',
         text: 'Check my invoices in Messages',
         style: 'primary',
+        url: 'slack://app?team={T026LE24D}&id={U96201NF2}&tab=messages',
       }),
     ],
   }),
