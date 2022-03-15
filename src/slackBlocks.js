@@ -137,6 +137,7 @@ export const cancelButton = () => getButton({
   style: 'danger',
 })
 
+// Riso's Slack ID
 const MAINTAINER_ID = 'UBTKJ1F88'
 
 /**
@@ -153,7 +154,7 @@ export const HOME_BLOCKS = [
       getButton({
         text: 'Check my invoices in Messages',
         style: 'primary',
-        url: 'slack://app?team={T026LE24D}&id={U96201NF2}&tab=messages',
+        url: 'slack://app?team=T026LE24D&id=A96QM4M45&tab=messages',
       }),
     ],
   }),
