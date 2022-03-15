@@ -10,6 +10,7 @@ import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 import {App, ExpressReceiver} from '@slack/bolt'
 import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, getSectionBlock, sendInvoicesButton, cancelButton, getButton, ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT, getActionsBlock, HOME_BLOCKS} from './slackBlocks'
+import {BLOCK_ID_HOME} from './constants'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -78,6 +79,9 @@ export const handleAction = async ({action, body, ack, respond}) => {
     // safe type narrowing
     // we know the handled action is always a block button action, but typescript doesn't
     if (!('block_id' in action) || action.type !== 'button' || body.type !== 'block_actions') return
+
+    // don't handle home block actions yet
+    if (action.block_id === BLOCK_ID_HOME) return
 
     const channelId = body.channel && body.channel.id
     const bot = channelId && c.bots[channelId]

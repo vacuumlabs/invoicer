@@ -1,3 +1,5 @@
+import {BLOCK_ID_HOME} from './constants'
+
 export const ACTION_ID_SEND_SK = 'send_sk'
 export const ACTION_ID_SEND_EN = 'send_en'
 export const ACTION_ID_VL_BOT = 'vl_bot'
@@ -142,7 +144,7 @@ export const HOME_BLOCKS = [
   getSectionBlock('In case of any trouble with your invoices, please contact the finance department through FinanceBot.'),
   getSectionBlock(`In case of technical issues with the bot, feel free to contact the maintainer (currently - <@${MAINTAINER_ID}>).`),
   getActionsBlock({
-    block_id: 'home_actions',
+    block_id: BLOCK_ID_HOME,
     elements: [
       getButton({
         action_id: 'go_to_messages',
