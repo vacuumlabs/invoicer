@@ -1,4 +1,4 @@
-import {BLOCK_ID_HOME} from './constants'
+import {BLOCK_ID_HOME, FINANCE_BOT_ID, MAINTAINER_ID} from './constants'
 
 export const ACTION_ID_SEND_SK = 'send_sk'
 export const ACTION_ID_SEND_EN = 'send_en'
@@ -137,16 +137,13 @@ export const cancelButton = () => getButton({
   style: 'danger',
 })
 
-// Riso's Slack ID
-const MAINTAINER_ID = 'UBTKJ1F88'
-
 /**
  * @type import('@slack/bolt').HomeView['blocks']
  */
 export const HOME_BLOCKS = [
   getHeaderBlock('Welcome to InvoiceBot!'),
   getSectionBlock('The finance department is sending invoices through me.'),
-  getSectionBlock('In case of any trouble with your invoices, please contact the finance department through FinanceBot.'),
+  getSectionBlock(`In case of any trouble with your invoices, please contact the finance department through <@${FINANCE_BOT_ID}>.`),
   getSectionBlock(`In case of technical issues with the bot, feel free to contact the maintainer (currently - <@${MAINTAINER_ID}>).`),
   getActionsBlock({
     block_id: BLOCK_ID_HOME,
