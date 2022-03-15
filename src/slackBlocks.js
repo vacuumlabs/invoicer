@@ -22,15 +22,13 @@ export const getHeaderBlock = (text) => ({
  * @param {string} text
  * @returns {import('@slack/bolt').SectionBlock}
  */
-export const getSectionBlock = (text) => {
-  return {
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      text,
-    },
-  }
-}
+export const getSectionBlock = (text) => ({
+  type: 'section',
+  text: {
+    type: 'mrkdwn',
+    text,
+  },
+})
 
 /**
  * @param {string} text
