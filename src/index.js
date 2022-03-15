@@ -3,7 +3,7 @@ import logger from 'winston'
 
 import c from './config'
 import {invoiceHandler} from './invoice'
-import {handleAction, handleMessage, boltReceiver, boltApp} from './slack'
+import {handleAction, handleMessage, boltReceiver, boltApp, handleHomeOpened} from './slack'
 import {initStorage} from './storage'
 import {routes as r} from './routes'
 
@@ -29,6 +29,7 @@ boltApp.error(errorHandler)
 
 boltApp.event('message', ({message, say}) => handleMessage(message, say))
 boltApp.action(/.*/g, (event) => handleAction(event))
+boltApp.event('app_home_opened', (event) => handleHomeOpened(event))
 
 ;(async function() {
   app.listen(c.port, () =>

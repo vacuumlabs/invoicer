@@ -9,7 +9,7 @@ import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 import {App, ExpressReceiver} from '@slack/bolt'
-import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, sectionBlock, sendInvoicesButton, cancelButton, getButton, ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT, getActionsBlock} from './slackBlocks'
+import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, getSectionBlock, sendInvoicesButton, cancelButton, getButton, ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT, getActionsBlock, HOME_BLOCKS} from './slackBlocks'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -99,7 +99,7 @@ export const handleAction = async ({action, body, ack, respond}) => {
         await respond({
           text: message,
           blocks: [
-            sectionBlock('mrkdwn', `*${message}*`),
+            getSectionBlock(`*${message}*`),
             getActionsBlock({
               block_id: `${botPendingInvoice.id}`,
               elements: [
@@ -127,6 +127,26 @@ export const handleAction = async ({action, body, ack, respond}) => {
   }
 }
 
+/**
+ * @type import('@slack/bolt').Middleware<import('@slack/bolt').SlackEventMiddlewareArgs<"app_home_opened">>
+ */
+export const handleHomeOpened = async ({event, client}) => {
+  try {
+    const userId = event.user
+
+    logger.info('app_home_opened', 'user:', userId)
+
+    await client.views.publish({
+      user_id: userId,
+      view: {
+        type: 'home',
+        blocks: HOME_BLOCKS,
+      },
+    })
+  } catch (e) {
+    logger.error(e, JSON.stringify(event))
+  }
+}
 
 /**
  * @param {import('@slack/bolt').ButtonAction} action
@@ -268,7 +288,7 @@ async function handleCSVUpload(event, bot, say) {
   const confirmation = await say({
     text: message,
     blocks: [
-      sectionBlock('mrkdwn', `*${message}*`),
+      getSectionBlock(`*${message}*`),
       getActionsBlock({
         block_id: `${event.ts}`,
         elements: [
