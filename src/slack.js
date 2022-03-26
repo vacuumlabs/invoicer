@@ -325,5 +325,7 @@ async function showError(channel, msg, ts = null) {
     channel,
     ts,
     text: `:exclamation: ${msg}`,
+    // required to clear the previous blocks. docs: https://api.slack.com/methods/chat.update#arg_blocks
+    blocks: [],
   })
 }
