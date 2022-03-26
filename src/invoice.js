@@ -210,8 +210,18 @@ const template = `
           {{/if}}
         </div>
       {{/incomingInvoice}}
-			{{^vendorVATPayer}}<div>{{texts.notTaxPayer}}</div>{{/vendorVATPayer}}
-      {{^domestic}}
+			{{#unless vendorVATPayer}}
+        {{#if vendorIsCzech}}
+          {{#if clientIsCzech}}
+            <div>{{texts.notTaxPayerCZVendorAndClient}}</div>
+          {{else}}
+            <div>{{texts.notTaxPayerCZVendorAndClientNot}}</div>
+          {{/if}}
+        {{else}}
+          <div>{{texts.notTaxPayerSK}}</div>
+        {{/if}}
+      {{/unless}}
+      {{#unless domestic}}
         <div>
           {{#if isCreditNote}}
             {{texts.taxPaysCustomerCreditNote}}
@@ -219,7 +229,7 @@ const template = `
             {{texts.taxPaysCustomerInvoice}}
           {{/if}}
         </div>
-      {{/domestic}}
+      {{/unless}}
       {{#if note}}<div id="freeNote">{{note}}</div>{{/if}}
 		</div>
   </body>
@@ -249,7 +259,9 @@ const texts = {
     totalToPay: 'Celkom k úhrade',
     selfInvoice: 'Vyhotovenie faktúry odberateľom',
     selfCreditNote: 'Vyhotovenie dobropisu odberateľom',
-    notTaxPayer: 'Dodávateľ nie je platcom DPH podľa § 4 zákona o DPH č. 222/2004 Z.z.',
+    notTaxPayerSKVendor: 'Dodávateľ nie je platcom DPH podľa § 4 zákona o DPH č. 222/2004 Z.z.',
+    notTaxPayerCZVendorAndClient: 'Dodávateľ nie je platcom DPH.',
+    notTaxPayerCZVendorAndClientNot: 'Dodávateľ je identifikovaná osoba pre účely DPH.',
     taxPaysCustomerInvoice: 'Faktúra je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.',
     taxPaysCustomerCreditNote: 'Dobropis je v režime prenesenej daňovej povinnosti. Daň odvedie zákazník.',
   },
@@ -275,7 +287,9 @@ const texts = {
     totalToPay: 'Total due',
     selfInvoice: 'Invoice created by customer',
     selfCreditNote: 'Credit note created by customer',
-    notTaxPayer: 'Supplier is not a VAT payer.',
+    notTaxPayerSKVendor: 'Supplier is not a VAT payer.',
+    notTaxPayerCZVendorAndClient: 'Supplier is not a VAT payer.',
+    notTaxPayerCZVendorAndClientNot: 'Supplier is an identified person for VAT purposes.',
     taxPaysCustomerInvoice: 'The delivery of service takes place in a different EU member state. The person responsible for tax payment is the recipient.',
     taxPaysCustomerCreditNote: 'The delivery of service takes place in a different EU member state. The person responsible for tax payment is the recipient.',
   },
@@ -309,6 +323,9 @@ const domesticCountries = [
 
 export default function renderInvoice(_context, language) {
   const context = {..._context}
+
+  context.vendorIsCzech = context.vendorCountry === 'Czech Republic'
+  context.clientIsCzech = context.clientCountry === 'Czech Republic'
 
   context.domestic = context.vendorCountry === context.clientCountry
     || domesticCountries.includes(context.clientCountry)
