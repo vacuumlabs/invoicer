@@ -55,6 +55,7 @@ export const handleMessage = async (message, say) => {
       // cancel old invoice, it will be overwritten by a new one
       if (botPendingInvoice) {
         const {channel, ts} = botPendingInvoice.confirmation
+        logger.info('Cancelling the old invoice, will be overwritten.')
         await showError(channel, 'Invoices canceled', ts)
       }
       await handleCSVUpload(message, bot, say)
@@ -177,6 +178,7 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
       await showError(channel, 'Something went wrong.')
     }
   } else { // action_id === 'cancel'
+    logger.info('Cancelling based on cancel action.')
     await showError(channel, 'Invoices canceled', ts)
   }
 }
