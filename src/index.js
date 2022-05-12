@@ -13,7 +13,7 @@ logger.setLevels(logger.config.npm.levels)
 
 const app = express()
 
-app.get(r.invoice, urlencoded(), invoiceHandler)
+app.get(r.invoice, urlencoded({extended: true}), invoiceHandler)
 
 app.use(r.events, boltReceiver.router)
 app.use(r.actions, boltReceiver.router)
