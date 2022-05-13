@@ -45,12 +45,7 @@ export const getContextBlock = (text) => ({
 })
 
 /**
-* @param {{
-    action_id?: import('@slack/bolt').Button['action_id']
-    text: string
-    style?: import('@slack/bolt').Button['style']
-    url?: import('@slack/bolt').Button['url']
-  }} buttonInfo
+ * @param {Pick<import('@slack/bolt').Button, 'action_id' | 'style' | 'url' | 'confirm'> & {text: string}} buttonInfo
  * @returns {import('@slack/bolt').Button}
  */
 export const getButton = ({action_id, text, style, url}) => ({
