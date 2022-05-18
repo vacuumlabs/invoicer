@@ -81,7 +81,9 @@ const template = `
                     <inv:invoiceItem>
                         <inv:text>{{name}}</inv:text>
                         <inv:quantity>1</inv:quantity>
-                        {{#if ../vendorVATPayer}}<inv:rateVAT>high</inv:rateVAT>{{/if}}
+                        {{#if ../vendorVATPayer}}{{#if ../domestic}}
+                        <inv:rateVAT>high</inv:rateVAT>
+                        {{/if}}{{/if}}
                         <inv:percentVAT>{{toFixed2 VATLevel}}</inv:percentVAT>
                         <inv:{{../currencyTag}}>
                             <typ:unitPrice>{{toFixed2 preTaxCost}}</typ:unitPrice>
