@@ -2,6 +2,7 @@ import handlebars from 'handlebars'
 import c from './config'
 import _ from 'lodash'
 import logger from 'winston'
+import {isDomestic} from './invoice'
 
 handlebars.registerHelper('XMLDate', (context) =>
   new Date(context).toISOString().slice(0, 10),
@@ -147,6 +148,8 @@ export default function invoices2PohodaXML(invoices) {
     invoice.currencyTag = invoice.currencyRate ? 'foreignCurrency' : 'homeCurrency'
     invoice.invoiceType = invoice.invoiceType || (invoice.isReceived ? 'receivedInvoice' : 'issuedInvoice')
     invoice.showNumberRequested = invoice.invoiceType !== 'receivedInvoice'
+
+    invoice.domestic = isDomestic(invoice.vendorCountry, invoice.clientCountry)
 
     logger.debug(`invoice before XML: ${JSON.stringify(invoice)}`)
   }
