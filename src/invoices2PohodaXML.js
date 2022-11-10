@@ -27,6 +27,7 @@ const template = `
                 <inv:invoiceHeader>
                     <inv:originalDocument>{{invoicePrefix}}{{invoiceNumber}}</inv:originalDocument>
                     <inv:symVar>{{symVar}}</inv:symVar>
+                    <inv:jiraID>{{user}}</inv:jiraID>
                     {{#if showNumberRequested}}
                       <inv:number>
                         <typ:numberRequested>{{invoicePrefix}}{{invoiceNumber}}</typ:numberRequested>
