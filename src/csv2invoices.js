@@ -67,7 +67,7 @@ export function csv2invoices(csv) {
       row.fullCostSum += fullCost
       const clientCurrency = countryToCurrency[row.clientCountry] ?? 'EUR'
       if (clientCurrency !== row.currency) {
-        currencyRate = rate[`${clientCurrency}_${row.currency}`]
+        currencyRate = rate[`${row.currency}_${clientCurrency}`]
       }
     }
     // move to next value (after the empty one)
