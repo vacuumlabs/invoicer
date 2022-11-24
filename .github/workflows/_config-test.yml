@@ -1,0 +1,12 @@
+name: CI test
+
+on:
+  push:
+    branches: [ "**" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_test:
+    uses: ./.github/workflows/test.yml

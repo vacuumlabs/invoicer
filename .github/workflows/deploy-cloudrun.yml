@@ -1,0 +1,56 @@
+name: CI/CD deploy to Cloud Run
+
+on:
+  workflow_call:
+    inputs:
+      PROJECT_ID_ARTIFACT_REGISTRY:
+        required: true
+        type: string
+      REGION:
+        required: true
+        type: string
+      SERVICE:
+        required: true
+        type: string
+      PROJECT_ID_CLOUD_RUN:
+        required: true
+        type: string
+    secrets:
+      WIF_PROVIDER:
+        required: true
+      WIF_SERVICE_ACCOUNT:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy_to_stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Google Auth from the pipeline staging
+        id: auth
+        uses: "google-github-actions/auth@v0"
+        with:
+          token_format: "access_token"
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER}}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Docker Auth to Google Cloud Artifact Registry staging
+        id: docker-auth
+        uses: "docker/login-action@v1"
+        with:
+          username: "oauth2accesstoken"
+          password: "${{ steps.auth.outputs.access_token }}"
+          registry: "${{ inputs.REGION }}-docker.pkg.dev"
+
+      - name: Deploy to Cloud Run staging
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v0
+        with:
+          project_id: ${{ inputs.PROJECT_ID_CLOUD_RUN }}
+          service: ${{ inputs.SERVICE}}
+          region: ${{ inputs.REGION }}
+          image: ${{ inputs.REGION }}-docker.pkg.dev/${{ inputs.PROJECT_ID_ARTIFACT_REGISTRY }}/${{ inputs.SERVICE }}:${{ github.sha }}
+  
