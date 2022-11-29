@@ -1,24 +1,10 @@
 import parse from 'csv-parse/lib/sync'
+import {getForeignCurrencyRates} from './gdriveApi'
 
 const countryToCurrency = {
   Slovakia: 'EUR',
   Czechia: 'CZK',
   Hungary: 'HUF',
-}
-
-// Temporarily hardcoded, these values should be downloaded from this google sheet
-// https://docs.google.com/spreadsheets/d/1HfaU9jXZtCfdotEEfDO0d4EpDLyhmqdepaWgn_a6Lsw/edit#gid=1807750274
-// client:foreign
-const rate = {
-  EUR_EUR: 1,
-  EUR_CZK: 24.4164,
-  EUR_HUF: 404.0329,
-  CZK_CZK: 1,
-  CZK_EUR: 0.0410, // 1/eur_czk
-  CZK_HUF: 16.547603, // eur_huf/eur_czk
-  HUF_HUF: 1,
-  HUF_CZK: 0.060432, // eur_czk/eur_huf
-  HUF_EUR: 0.002475, // 1/eur_huf
 }
 
 const columns = [
@@ -38,7 +24,8 @@ function finRound(n) {
 }
 
 // TODO: Parse float values + handle special case of authors.
-export function csv2invoices(csv) {
+export async function csv2invoices(csv) {
+  const rate = await getForeignCurrencyRates()
   return parse(csv).map((r) => {
     let i = 0
     let currencyRate
