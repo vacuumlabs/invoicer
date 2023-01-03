@@ -207,7 +207,9 @@ export async function getForeignCurrencyRates() {
   // https://docs.google.com/spreadsheets/d/1HfaU9jXZtCfdotEEfDO0d4EpDLyhmqdepaWgn_a6Lsw/edit#gid=1807750274
   const fileId = '1HfaU9jXZtCfdotEEfDO0d4EpDLyhmqdepaWgn_a6Lsw'
   const today = new Date()
-  const sheetName =  `${monthNames[today.getMonth() - 1]} ${today.getFullYear()}` // e.g. 'Nov 2022'
+  const prevMonth = (today.getMonth() + 12 - 1) % 12
+  const prevMonthYear = prevMonth === 11 ? today.getFullYear() - 1 : today.getFullYear()
+  const sheetName =  `${monthNames[prevMonth]} ${prevMonthYear}` // e.g. 'Nov 2022'
 
   const {data:{values:rates}} = await sheets.spreadsheets.values.get({
     spreadsheetId: fileId,
