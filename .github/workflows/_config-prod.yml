@@ -9,29 +9,24 @@ permissions:
   id-token: write
 
 jobs:
-  build_and_test:
-    uses: ./.github/workflows/test.yml
-  
   build_and_push_docker_image:
-    needs: build_and_test
-    uses: ./.github/workflows/build-docker.yml
+    uses: vacuumlabs/internalapps-cicd/.github/workflows/build-docker.yml@master
     with:
-      PROJECT_ID_ARTIFACT_REGISTRY: vl-bots-common/vl-invoicerbot-prod-repository
+      PROJECT_ID_ARTIFACT_REGISTRY: vl-bots-common/vl-invoicebot-prod-repository
       REGION: europe-west1
-      SERVICE: invoicerbot-prod
+      SERVICE: invoicebot-prod
     secrets:
       WIF_PROVIDER: ${{ secrets.WIF_PROVIDER_PROD }}
       WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT_PROD }}
-  
+
   deploy_to_prod:
     needs: build_and_push_docker_image
-    uses: ./.github/workflows/deploy-cloudrun.yml
+    uses: vacuumlabs/internalapps-cicd/.github/workflows/deploy-cloudrun.yml@master
     with:
-      PROJECT_ID_ARTIFACT_REGISTRY: vl-bots-common/vl-invoicerbot-prod-repository
-      SERVICE: invoicerbot-prod
-      PROJECT_ID_CLOUD_RUN: vl-bots-invoicerbot-prod
+      PROJECT_ID_ARTIFACT_REGISTRY: vl-bots-common/vl-invoicebot-prod-repository
+      SERVICE: invoicebot-prod
+      PROJECT_ID_CLOUD_RUN: vl-bots-invoicebot-prod
       REGION: europe-west1
-      BUILD_ENV: prod
     secrets:
       WIF_PROVIDER: ${{ secrets.WIF_PROVIDER_PROD }}
       WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT_PROD }}
