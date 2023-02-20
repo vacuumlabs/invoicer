@@ -80,7 +80,7 @@ export async function csv2invoices(csv) {
     i++
     // load additional columns
     for (let j = 0; j < additionalColumns.length; i++, j++) row[additionalColumns[j]] = r[i]
-    row.currencyRate = row.currencyRate ?? currencyRate
+    row.currencyRate = currencyRate ?? row.currencyRate
     return row
   })
 }
