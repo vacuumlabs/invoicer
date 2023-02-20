@@ -139,7 +139,7 @@ export const HOME_BLOCKS = [
   getHeaderBlock('Welcome to InvoiceBot!'),
   getSectionBlock('The finance department is sending invoices through me.'),
   getSectionBlock(`In case of any trouble with your invoices, please contact the finance department through <@${FINANCE_BOT_ID}>.`),
-  getSectionBlock(`In case of technical issues with the bot, feel free to contact the maintainer (currently - <@${MAINTAINER_ID}>).`),
+  getSectionBlock('In case of technical issues with the bot, feel free to fill the ticket in the <https://steady-jitterbug-41f.notion.site/SERVICE-DESK-IIT-1ca9cc09f90e4628b15c66ab90bb898c|IIT Service desk>.'),
   getActionsBlock({
     block_id: BLOCK_ID_HOME,
     elements: [
