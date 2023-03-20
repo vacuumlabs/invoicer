@@ -160,7 +160,7 @@ const template = `
     </div>
 		<div id="payment-terms">
 			<dl>
-				<dt>{{texts.taxDate}}: </dt><dd>{{formatDate issueDate day="numeric" month="long" year="numeric"}}</dd>
+				<dt>{{texts.taxDate}}: </dt><dd>{{formatDate deliveryDate day="numeric" month="long" year="numeric"}}</dd>
 				<dt>{{texts.createDate}}: </dt><dd>{{formatDate issueDate day="numeric" month="long" year="numeric"}}</dd>
 				<dt>{{texts.dueDate}}: </dt><dd>{{formatDate paymentDate day="numeric" month="long" year="numeric"}}</dd>
 			</dl>
@@ -347,6 +347,7 @@ export default function renderInvoice(_context, language) {
 
 export function query2invoice(query) {
   const invoice = query.id ? {...shortNames[query.id]} : JSON.parse(query.invoice)
+  invoice.deliveryDate = Date.parse(invoice.deliveryDate)
   invoice.issueDate = Date.parse(invoice.issueDate)
   invoice.paymentDate = Date.parse(invoice.paymentDate)
   return invoice

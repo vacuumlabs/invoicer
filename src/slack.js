@@ -252,7 +252,7 @@ const formatInvoice = (invoice) => {
   }
 
   const [date, cost, user, partner] = [
-    invoice.issueDate.padEnd(10),
+    invoice.deliveryDate.padEnd(10),
     currencyFormat.format(invoice.fullCostSum).padStart(9),
     trimPad(invoice.user, 13),
     trimPad(invoice.incomingInvoice ? invoice.vendorName : invoice.clientName, 18),

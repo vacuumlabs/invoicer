@@ -34,7 +34,7 @@ const template = `
                     {{/if}}
                     <inv:invoiceType>{{invoiceType}}</inv:invoiceType>
                     <inv:date>{{XMLDate issueDate}}</inv:date>
-                    <inv:dateTax>{{XMLDate issueDate}}</inv:dateTax>
+                    <inv:dateTax>{{XMLDate deliveryDate}}</inv:dateTax>
                     <inv:dateAccounting>{{XMLDate issueDate}}</inv:dateAccounting>
                     <inv:dateDue>{{XMLDate paymentDate}}</inv:dateDue>
                     

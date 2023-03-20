@@ -14,6 +14,7 @@ export const exampleQuery = {
    clientID: '50509527',
    clientTaxID: '1080786630',
    clientVAT: 'CZ2120112962',
+   deliveryDate: Date.parse('2022-12-08'),
    issueDate: Date.parse('2017-11-07'),
    paymentDate: Date.parse('2017-11-15'),
    services: [{
