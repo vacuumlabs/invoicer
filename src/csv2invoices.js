@@ -12,7 +12,7 @@ const columns = [
   'vendorStreet', 'vendorCity', 'vendorZip', 'vendorCountry', 'vendorID', 'vendorTaxID',
   'vendorVAT', 'vendorVATPayer', 'vendorIBAN', 'vendorBIC', 'clientName',
   'clientStreet', 'clientCity', 'clientZip', 'clientCountry', 'clientID', 'clientTaxID',
-  'clientVAT', 'issueDate', 'paymentDate', 'isReceived', 'note', 'currency',
+  'clientVAT', 'deliveryDate', 'issueDate', 'paymentDate', 'isReceived', 'note', 'currency',
 ]
 
 const booleanColumns = ['isReceived', 'vendorVATPayer']
