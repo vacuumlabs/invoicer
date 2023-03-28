@@ -35,6 +35,7 @@
     "handlebars-intl": "^1.1.2",
     "html-pdf": "^3.0.1",
     "lodash": "^4.17.21",
+    "request": "^2.88.2",
     "request-promise": "^4.2.6",
     "transenv": "^1.0.3",
     "winston": "2.4.5"
