@@ -36,9 +36,9 @@ boltApp.event('app_home_opened', (event) => handleHomeOpened(event))
     logger.log('info', `App started on localhost:${c.port}.`),
   )
 
-  await Promise.all([
-    Promise.all(Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google))),
-  ])
+  await Promise.all(
+    Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google[bot.companyDrive])),
+  )
 
 })().catch((e) => {
   logger.log('error', e)

@@ -6,7 +6,7 @@ export default transenv()(({str, bool, num}) => {
   const bots = str('bots_config').split(';').reduce((acc, botData) => {
     const fields = botData.split(',')
 
-    if (fields.length !== 6) {
+    if (fields.length !== 6 && fields.length !== 7) {
       throw new Error(`Invalid bot config - ${botData}`)
     }
 
@@ -17,10 +17,17 @@ export default transenv()(({str, bool, num}) => {
       adminEmails,
       sendOnSlack,
       groupByYear,
+      // optional
+      companyDrive = 'vl',
     ] = fields
+
+    if (companyDrive !== 'vl') {
+      throw new Error(`Invalid company drive - ${companyDrive}`)
+    }
 
     acc[channel] = {
       channel,
+      companyDrive,
       storage: {
         adminEmails,
         rootFolder: storageRootFolder,
@@ -48,8 +55,10 @@ export default transenv()(({str, bool, num}) => {
     bots,
     pohodaImportID: str('pohoda_import_id'),
     google: {
-      email: str('google_email'),
-      key: str('google_key'),
+      vl: {
+        email: str('google_vl_email'),
+        key: str('google_vl_key'),
+      },
     },
   }
 })
