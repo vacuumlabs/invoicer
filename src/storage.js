@@ -12,7 +12,7 @@ export async function initStorage(config, google) {
 }
 
 export async function saveInvoice(invoice, stream, config) {
-  const {user, email, invoicePrefix, invoiceNumber, paymentDate} = invoice
+  const {user, email, vendorID, invoicePrefix, invoiceNumber, paymentDate} = invoice
   const {rootFolder, userFolder, groupByYear} = config
 
   logger.log('verbose', 'storage - saveInvoice', user)
@@ -21,7 +21,7 @@ export async function saveInvoice(invoice, stream, config) {
 
   await ensureFolder(userFolder, email && `${email}:anyone`)
 
-  const name = `${user}-${invoicePrefix}${invoiceNumber}.pdf`
+  const name = `${user}-${vendorID}-${invoicePrefix}${invoiceNumber}.pdf`
   const year = paymentDate.split('-')[0]
   const folder = `${folderWithoutYear}${groupByYear ? `/${year}` : ''}`
 
