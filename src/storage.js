@@ -12,15 +12,18 @@ export async function initStorage(config, google) {
 }
 
 export async function saveInvoice(invoice, stream, config) {
-  logger.log('verbose', 'storage - saveInvoice', invoice.user)
+  const {user, email, invoicePrefix, invoiceNumber, paymentDate} = invoice
+  const {rootFolder, userFolder, groupByYear} = config
 
-  const userFolder = `${config.rootFolder}/${invoice.user}/${config.userFolder}`
+  logger.log('verbose', 'storage - saveInvoice', user)
 
-  await ensureFolder(userFolder, invoice.email && `${invoice.email}:anyone`)
+  const folderWithoutYear = `${rootFolder}/${user}/${userFolder}`
 
-  const name = `${invoice.user}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
-  const year = invoice.paymentDate.split('-')[0]
-  const folder = `${userFolder}${config.groupByYear ? `/${year}` : ''}`
+  await ensureFolder(userFolder, email && `${email}:anyone`)
+
+  const name = `${user}-${invoicePrefix}${invoiceNumber}.pdf`
+  const year = paymentDate.split('-')[0]
+  const folder = `${folderWithoutYear}${groupByYear ? `/${year}` : ''}`
 
   const fileData = await upsertFile(name, folder, stream)
 
