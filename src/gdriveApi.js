@@ -13,11 +13,11 @@ const sheets = google.sheets({version: 'v4'})
 
 const folderIdByPath = {}
 
-export function init(config) {
+export function init(googleConfig) {
   logger.log('verbose', 'gdrive - init')
 
-  const key = Buffer.from(config.key, 'base64').toString()
-  const auth = new google.auth.JWT(config.email, null, key, ['https://www.googleapis.com/auth/drive'])
+  const key = Buffer.from(googleConfig.key, 'base64').toString()
+  const auth = new google.auth.JWT(googleConfig.email, null, key, ['https://www.googleapis.com/auth/drive'])
 
   google.options({
     auth,

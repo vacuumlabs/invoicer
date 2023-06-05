@@ -37,7 +37,7 @@ boltApp.event('app_home_opened', (event) => handleHomeOpened(event))
   )
 
   await Promise.all([
-    Promise.all(Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google))),
+    Promise.all(Object.values(c.bots).map((bot) => initStorage(bot.storage, c.google[bot.companyDrive]))),
   ])
 
 })().catch((e) => {
