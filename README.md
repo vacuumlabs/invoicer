@@ -20,7 +20,7 @@ Creates, stores and sends invoices.
   - `admin emails` - list of admin emails separated by `+`. Root folder will be shared with these emails. Optionally can contain also type of account (user, group) and role (reader, writer, owner, commenter). Example: _fero@vacuumlabs.com:user:reader+finance@vacuumlabs.com:group:owner_. Default type: _user_, default role: _reader_. Only one admin can be owner
   - _sendOnSlack_ - 0/1 - send notification to invoice recipient on slack
   - _groupByYear_ - 0/1 - group invoices on gdrive by year
-  - `companyDrive` (optional) - `wincent`, `vl`, or nothing (defaults to `vl`). Switches Google service account used.
+  - `companyDrive` (optional) - `vl`, or nothing (defaults to `vl`). Switches Google service account used. (Not used yet.)
 - `slack_bot_token` - bot user OAuth token from Slack app - menu Install App
 - `slack_bot_signing_secret` - bot signing secret from Slack app - menu Basic Information
 - `pohoda_import_id` - import ID used in generated Pohoda XML file
@@ -30,12 +30,10 @@ Creates, stores and sends invoices.
 
 [Google API service account](https://cloud.google.com/docs/authentication/production#create_service_account) is needed to enable comunication with Google sheets. You need to [enable Google Drive API](https://console.developers.google.com/apis/library).
 
-Different workspaces (companies) may use different service accounts. Currently, separate env vars are added for each.
+Different workspaces (companies) may use different service accounts. Currently, separate env vars may be added for each.
 
 - `google_vl_email` - email of VL service account
 - `google_vl_key` - base64 encoded private key of VL service account (including the _-----BEGIN PRIVATE KEY-----_ and _-----END PRIVATE KEY-----_)
-- `google_wincent_email` - email of Wincent service account
-- `google_wincent_key` - base64 encoded private key of Wincent service account (including the _-----BEGIN PRIVATE KEY-----_ and _-----END PRIVATE KEY-----_)
 
 ### Misc
 

@@ -21,7 +21,7 @@ export default transenv()(({str, bool, num}) => {
       companyDrive = 'vl',
     ] = fields
 
-    if (companyDrive !== 'vl' && companyDrive !== 'wincent') {
+    if (companyDrive !== 'vl') {
       throw new Error(`Invalid company drive - ${companyDrive}`)
     }
 
@@ -58,10 +58,6 @@ export default transenv()(({str, bool, num}) => {
       vl: {
         email: str('google_vl_email'),
         key: str('google_vl_key'),
-      },
-      wincent: {
-        email: str('google_wincent_email'),
-        key: str('google_wincent_key'),
       },
     },
   }
