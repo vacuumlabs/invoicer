@@ -13,17 +13,6 @@ const sheets = google.sheets({version: 'v4'})
 
 const folderIdByPath = {}
 
-export function init(googleConfig) {
-  logger.log('verbose', 'gdrive - init')
-
-  const key = Buffer.from(googleConfig.key, 'base64').toString()
-  const auth = new google.auth.JWT(googleConfig.email, null, key, ['https://www.googleapis.com/auth/drive'])
-
-  google.options({
-    auth,
-  })
-}
-
 export async function ensureFolder(folderPath, share = null) {
   logger.log('verbose', 'gdrive - ensureFolder', folderPath, share)
 
