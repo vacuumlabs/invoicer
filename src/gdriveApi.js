@@ -67,7 +67,14 @@ async function getIdByName(name, parentPath, isFolder = false) {
     throw err
   })
 
-  return _.get(res, 'data.files[0].id')
+  const files = res.data.files
+  if (files.length === 0) {
+    logger.error('gdrive - getIdByName - no file found', name, parentPath, isFolder)
+    throw new Error('gdrive - getIdByName - no file found')
+  }
+  if (files.length > 1) logger.warn('gdrive - getIdByName - more than one file found, picking first', name, parentPath, isFolder, files)
+
+  return files[0].id
 }
 
 async function shareItem(id, shareData) {
