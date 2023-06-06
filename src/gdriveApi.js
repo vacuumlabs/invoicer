@@ -60,7 +60,7 @@ async function getIdByName(name, parentPath, isFolder = false) {
   if (parentPath && !parentId) return null
 
   const res = await drive.files.list({
-    q: `mimeType ${isFolder ? '=' : '!='} '${FOLDER_MIME_TYPE}' and name = '${name}'${parentId ? ` and '${parentId}' in parents` : ''}`,
+    q: `mimeType ${isFolder ? '=' : '!='} '${FOLDER_MIME_TYPE}' and name = '${name}' and '${parentId || 'root'}' in parents and trashed = false`,
     orderBy: 'modifiedByMeTime desc',
   }).catch((err) => {
     logger.log('error', 'gdrive - getIdByName', err)
