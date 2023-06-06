@@ -78,11 +78,12 @@ async function shareItem(id, shareData) {
 
     await drive.permissions.create({
       fileId: id,
-      transferOwnership: role === 'owner',
       requestBody: {
         role,
         type,
         emailAddress,
+        // https://developers.google.com/drive/api/guides/manage-sharing#transfer-consumer-account
+        ...(role === 'owner' ? {pendingOwner: true} : {}),
       },
     }).catch((err) => {
       logger.log('error', 'gdrive - shareItem', err)
