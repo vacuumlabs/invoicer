@@ -79,8 +79,8 @@ async function getIdByName(name, parentPath, isFolder = false) {
 
   const files = res.data.files
   if (files.length === 0) {
-    logger.error('gdrive - getIdByName - no file found', name, parentPath, isFolder)
-    throw new Error('gdrive - getIdByName - no file found')
+    logger.verbose('gdrive - getIdByName - no file found', name, parentPath, isFolder)
+    return null
   }
   if (files.length > 1) logger.warn('gdrive - getIdByName - more than one file found, picking first', name, parentPath, isFolder, files)
 
