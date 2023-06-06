@@ -345,7 +345,11 @@ export default function renderInvoice(_context, language) {
   }}})
 }
 
-export const getInvoiceFileName = (invoice) => `${invoice.user || invoice.clientName}-${invoice.vendorID}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
+export const getInvoiceFileName = (invoice) => {
+  const {user, clientName, vendorID, invoicePrefix, invoiceNumber} = invoice
+
+  return `${user || clientName}-${vendorID}-${invoicePrefix}${invoiceNumber}.pdf`
+}
 
 export function query2invoice(query) {
   const invoice = query.id ? {...shortNames[query.id]} : JSON.parse(query.invoice)
