@@ -1,7 +1,7 @@
 import logger from 'winston'
-import {ensureFolder, upsertFile} from './gdriveApi'
-import {getInvoiceFileName} from './invoice'
+import {ensureFolder, upsertFile} from './google/drive'
 import {init} from './google/init'
+import {getInvoiceFileName} from './invoice'
 
 
 export async function initStorage(config, google) {
