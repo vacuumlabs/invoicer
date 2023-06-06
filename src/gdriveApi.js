@@ -25,12 +25,13 @@ export function init(googleConfig) {
 }
 
 export async function ensureFolder(folderPath, share = null) {
-  logger.log('verbose', 'gdrive - ensureFolder', folderPath)
+  logger.log('verbose', 'gdrive - ensureFolder', folderPath, share)
+
 
   if (folderIdByPath[folderPath]) {
+    // confirm the folder wasn't deleted
     folderIdByPath[folderPath] = await confirmFolderId(folderIdByPath[folderPath])
   }
-
   if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
 
   const {dir, base} = path.parse(folderPath)
@@ -38,13 +39,10 @@ export async function ensureFolder(folderPath, share = null) {
   if (dir !== '') await ensureFolder(dir)
 
   folderIdByPath[folderPath] = await getIdByName(base, dir, true)
-
   if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
 
   const folderId = await createFolder(folderPath, share)
-
   folderIdByPath[folderPath] = folderId
-
   logger.log('verbose', 'gdrive - ensureFolder - done', folderPath, folderId)
 
   return folderId
@@ -163,6 +161,7 @@ async function getIdByName(name, parentPath, isFolder = false) {
 
   const parentId = parentPath && folderIdByPath[parentPath]
 
+  // shouldn't happen - we await `ensureFolder` on parent dir before calling this
   if (parentPath && !parentId) return null
 
   const res = await drive.files.list({
