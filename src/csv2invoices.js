@@ -1,5 +1,5 @@
 import parse from 'csv-parse/lib/sync'
-import {getForeignCurrencyRates} from './gdriveApi'
+import {getForeignCurrencyRates} from './google/sheets'
 
 const countryToCurrency = {
   Slovakia: 'EUR',
