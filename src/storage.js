@@ -20,7 +20,7 @@ export async function saveInvoice(invoice, stream, config) {
 
   const folderWithoutYear = `${rootFolder}/${user}/${userFolder}`
 
-  await ensureFolder(userFolder, email && `${email}:anyone`)
+  await ensureFolder(folderWithoutYear, email && `${email}:anyone`)
 
   const fileName = getInvoiceFileName(invoice)
   const year = paymentDate.split('-')[0]
