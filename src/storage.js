@@ -25,9 +25,9 @@ export async function saveInvoice(invoice, stream, config) {
 
   const fileName = getInvoiceFileName(invoice)
   const year = paymentDate.split('-')[0]
-  const folder = `${folderWithoutYear}${groupByYear ? `/${year}` : ''}`
+  const folderPath = `${folderWithoutYear}${groupByYear ? `/${year}` : ''}`
 
-  const fileData = await upsertFile(fileName, folder, stream)
+  const fileData = await upsertFile(fileName, folderPath, stream)
 
   logger.log('verbose', 'storage - saveInvoice - done', fileData.name)
 

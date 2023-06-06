@@ -10,24 +10,34 @@ const drive = google.drive('v3')
 
 const folderIdByPath = {}
 
+// check whether a folder with `folderPath` exists.
+// if not, create it and share it based on the `share` settings.
+// note: `folderPath` is a full path from the service account's root My Drive
+// return the folder's ID
 export async function ensureFolder(folderPath, share = null) {
   logger.log('verbose', 'gdrive - ensureFolder', folderPath, share)
 
-
-  if (folderIdByPath[folderPath]) {
-    // confirm the folder wasn't deleted
-    folderIdByPath[folderPath] = await confirmFolderId(folderIdByPath[folderPath])
+  let folderId = folderIdByPath[folderPath]
+  if (folderId) {
+    // confirm the folder still exists and is accessible
+    const success = await confirmFolderId(folderId)
+    if (success) return folderId
+    else folderIdByPath[folderPath] = null
   }
-  if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
 
-  const {dir, base} = path.parse(folderPath)
+  const {dir: parentPath, base: folderName} = path.parse(folderPath)
 
-  if (dir !== '') await ensureFolder(dir)
+  // recursively call for missing parent folders and then start creating them from the top
+  if (parentPath) await ensureFolder(parentPath)
 
-  folderIdByPath[folderPath] = await getIdByName(base, dir, true)
-  if (folderIdByPath[folderPath]) return folderIdByPath[folderPath]
+  // parentPath is empty for top-level folder
+  folderId = await getIdByName(folderName, parentPath, true)
+  if (folderId) {
+    folderIdByPath[folderPath] = folderId
+    return folderId
+  }
 
-  const folderId = await createFolder(folderPath, share)
+  folderId = await createFolder(folderPath, share)
   folderIdByPath[folderPath] = folderId
   logger.log('verbose', 'gdrive - ensureFolder - done', folderPath, folderId)
 
@@ -37,18 +47,18 @@ export async function ensureFolder(folderPath, share = null) {
 async function confirmFolderId(id) {
   logger.log('verbose', 'gdrive - confirmFolderId', id)
 
-  const res = await drive.files.get({
+  await drive.files.get({
     fileId: id,
   }).catch((err) => {
     if (err.code === 404) {
-      return null
+      return false
     }
 
     logger.log('error', 'gdrive - confirmFolderId', err)
     throw err
   })
 
-  return _.get(res, 'data.id')
+  return true
 }
 
 async function getIdByName(name, parentPath, isFolder = false) {
