@@ -1,5 +1,6 @@
 import logger from 'winston'
 import {init, ensureFolder, upsertFile} from './gdriveApi'
+import {getInvoiceFileName} from './invoice'
 
 
 export async function initStorage(config, google) {
@@ -12,7 +13,7 @@ export async function initStorage(config, google) {
 }
 
 export async function saveInvoice(invoice, stream, config) {
-  const {user, email, vendorID, invoicePrefix, invoiceNumber, paymentDate} = invoice
+  const {user, email, paymentDate} = invoice
   const {rootFolder, userFolder, groupByYear} = config
 
   logger.log('verbose', 'storage - saveInvoice', user)
@@ -21,11 +22,11 @@ export async function saveInvoice(invoice, stream, config) {
 
   await ensureFolder(userFolder, email && `${email}:anyone`)
 
-  const name = `${user}-${vendorID}-${invoicePrefix}${invoiceNumber}.pdf`
+  const fileName = getInvoiceFileName(invoice)
   const year = paymentDate.split('-')[0]
   const folder = `${folderWithoutYear}${groupByYear ? `/${year}` : ''}`
 
-  const fileData = await upsertFile(name, folder, stream)
+  const fileData = await upsertFile(fileName, folder, stream)
 
   logger.log('verbose', 'storage - saveInvoice - done', fileData.name)
 

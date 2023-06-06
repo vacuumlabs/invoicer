@@ -345,6 +345,8 @@ export default function renderInvoice(_context, language) {
   }}})
 }
 
+export const getInvoiceFileName = (invoice) => `${invoice.user || invoice.clientName}-${invoice.vendorID}-${invoice.invoicePrefix}${invoice.invoiceNumber}.pdf`
+
 export function query2invoice(query) {
   const invoice = query.id ? {...shortNames[query.id]} : JSON.parse(query.invoice)
   invoice.deliveryDate = Date.parse(invoice.deliveryDate)
@@ -360,7 +362,7 @@ export function invoiceHandler(req, res) {
     .create(htmlInvoice, {format: 'A4'})
     .toBuffer((err, buffer) => {
       if (err) logger.warn('PDF conversion failed')
-      const fileName = `${invoiceData.user || invoiceData.clientName}-${invoiceData.invoicePrefix}${invoiceData.invoiceNumber}.pdf`
+      const fileName = getInvoiceFileName(invoiceData)
       res.setHeader('Content-Disposition', contentDisposition(fileName))
       res.status(200).send(buffer)
     })
