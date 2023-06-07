@@ -47,16 +47,14 @@ export async function ensureFolder(folderPath, share = null) {
 async function confirmFolderId(id) {
   logger.log('verbose', 'gdrive - confirmFolderId', id)
 
-  await drive.files.get({
-    fileId: id,
-  }).catch((err) => {
-    if (err.code === 404) {
-      return false
-    }
+  try {
+    await drive.files.get({fileId: id})
+  } catch (err) {
+    if (err.code === 404) return false
 
     logger.log('error', 'gdrive - confirmFolderId', err)
     throw err
-  })
+  }
 
   return true
 }
@@ -69,22 +67,24 @@ async function getIdByName(name, parentPath, isFolder = false) {
   // shouldn't happen - we await `ensureFolder` on parent dir before calling this
   if (parentPath && !parentId) return null
 
-  const res = await drive.files.list({
-    q: `mimeType ${isFolder ? '=' : '!='} '${FOLDER_MIME_TYPE}' and name = '${name}' and '${parentId || 'root'}' in parents and trashed = false`,
-    orderBy: 'modifiedByMeTime desc',
-  }).catch((err) => {
+  try {
+    const res = await drive.files.list({
+      q: `mimeType ${isFolder ? '=' : '!='} '${FOLDER_MIME_TYPE}' and name = '${name}' and '${parentId || 'root'}' in parents and trashed = false`,
+      orderBy: 'modifiedByMeTime desc',
+    })
+
+    const files = res.data.files
+    if (files.length === 0) {
+      logger.verbose('gdrive - getIdByName - no file found', name, parentPath, isFolder)
+      return null
+    }
+    if (files.length > 1) logger.warn('gdrive - getIdByName - more than one file found, picking first', name, parentPath, isFolder, files)
+
+    return files[0].id
+  } catch (err) {
     logger.log('error', 'gdrive - getIdByName', err)
     throw err
-  })
-
-  const files = res.data.files
-  if (files.length === 0) {
-    logger.verbose('gdrive - getIdByName - no file found', name, parentPath, isFolder)
-    return null
   }
-  if (files.length > 1) logger.warn('gdrive - getIdByName - more than one file found, picking first', name, parentPath, isFolder, files)
-
-  return files[0].id
 }
 
 async function shareItem(id, shareData) {
@@ -93,19 +93,21 @@ async function shareItem(id, shareData) {
   for (let i = 0; i < shareData.length; i++) {
     const {role, type, emailAddress} = shareData[i]
 
-    await drive.permissions.create({
-      fileId: id,
-      requestBody: {
-        role,
-        type,
-        emailAddress,
-        // https://developers.google.com/drive/api/guides/manage-sharing#transfer-consumer-account
-        ...(role === 'owner' ? {pendingOwner: true} : {}),
-      },
-    }).catch((err) => {
+    try {
+      await drive.permissions.create({
+        fileId: id,
+        requestBody: {
+          role,
+          type,
+          emailAddress,
+          // https://developers.google.com/drive/api/guides/manage-sharing#transfer-consumer-account
+          ...(role === 'owner' ? {pendingOwner: true} : {}),
+        },
+      })
+    } catch (err) {
       logger.log('error', 'gdrive - shareItem', err)
       throw err
-    })
+    }
   }
 
   logger.log('verbose', 'gdrive - shareItem - done', id, shareData)
@@ -118,47 +120,49 @@ async function createFolder(folderPath, share = null) {
 
   const parentId = dir === '' ? null : folderIdByPath[dir] // caller must ensure that parent exists
 
-  const res = await drive.files.create({
-    resource: {
-      name: base,
-      mimeType: FOLDER_MIME_TYPE,
-      parents: parentId ? [parentId] : [],
-    },
-  }).catch((err) => {
+  try {
+    const res = await drive.files.create({
+      resource: {
+        name: base,
+        mimeType: FOLDER_MIME_TYPE,
+        parents: parentId ? [parentId] : [],
+      },
+    })
+
+    const folderId = res.data.id
+
+    if (share) {
+      await shareItem(folderId, share.split('+').reduce((acc, shareData) => {
+        const [emailAddress, type, role] = shareData.split(':')
+
+        if (type === 'anyone') {
+          acc.push({ // sends email with invitation
+            role: role || DEFAULT_PERM_ROLE,
+            type: DEFAULT_PERM_TYPE,
+            emailAddress,
+          }, { // enables reading by link
+            role: 'reader',
+            type,
+          })
+        } else {
+          acc.push({
+            role: role || DEFAULT_PERM_ROLE,
+            type: type || DEFAULT_PERM_TYPE,
+            emailAddress,
+          })
+        }
+
+        return acc
+      }, []))
+    }
+
+    logger.log('verbose', 'gdrive - createFolder - done', folderPath, share, folderId)
+
+    return folderId
+  } catch (err) {
     logger.log('error', 'gdrive - createFolder', err)
     throw err
-  })
-
-  const folderId = res.data.id
-
-  if (share) {
-    await shareItem(folderId, share.split('+').reduce((acc, shareData) => {
-      const [emailAddress, type, role] = shareData.split(':')
-
-      if (type === 'anyone') {
-        acc.push({ // sends email with invitation
-          role: role || DEFAULT_PERM_ROLE,
-          type: DEFAULT_PERM_TYPE,
-          emailAddress,
-        }, { // enables reading by link
-          role: 'reader',
-          type,
-        })
-      } else {
-        acc.push({
-          role: role || DEFAULT_PERM_ROLE,
-          type: type || DEFAULT_PERM_TYPE,
-          emailAddress,
-        })
-      }
-
-      return acc
-    }, []))
   }
-
-  logger.log('verbose', 'gdrive - createFolder - done', folderPath, share, folderId)
-
-  return folderId
 }
 
 export async function upsertFile(name, folder, content) {
@@ -167,37 +171,39 @@ export async function upsertFile(name, folder, content) {
   const folderId = await ensureFolder(folder)
   const fileIdByName = await getIdByName(name, folder)
 
-  const file = await (
-    fileIdByName
-      ? drive.files.update({
-          fileId: fileIdByName,
-          resource: {
-            name,
-          },
-          media: {
-            body: content,
-          },
-          fields: 'id,webViewLink',
-        })
-      : drive.files.create({
-          resource: {
-            name,
-            parents: [folderId],
-          },
-          media: {
-            body: content,
-          },
-          fields: 'id,webViewLink',
-        })
-  ).catch((err) => {
+  try {
+    const file = await (
+      fileIdByName
+        ? drive.files.update({
+            fileId: fileIdByName,
+            resource: {
+              name,
+            },
+            media: {
+              body: content,
+            },
+            fields: 'id,webViewLink',
+          })
+        : drive.files.create({
+            resource: {
+              name,
+              parents: [folderId],
+            },
+            media: {
+              body: content,
+            },
+            fields: 'id,webViewLink',
+          })
+    )
+
+    logger.log('verbose', 'gdrive - upsertFile - done', name, folder)
+
+    return {
+      name,
+      url: file.data.webViewLink || `https://drive.google.com/open?id=${file.data.id}`,
+    }
+  } catch (err) {
     logger.log('error', 'gdrive - upsertFile', err)
     throw err
-  })
-
-  logger.log('verbose', 'gdrive - upsertFile - done', name, folder)
-
-  return {
-    name,
-    url: file.data.webViewLink || `https://drive.google.com/open?id=${file.data.id}`,
   }
 }
