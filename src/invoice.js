@@ -221,14 +221,16 @@ const template = `
           <div>{{texts.notTaxPayerSK}}</div>
         {{/if}}
       {{/unless}}
-      {{#unless domestic}}
-        <div>
-          {{#if isCreditNote}}
-            {{texts.taxPaysCustomerCreditNote}}
-          {{else}}
-            {{texts.taxPaysCustomerInvoice}}
-          {{/if}}
-        </div>
+      {{#unless isFromEuropeanUnion}}
+        {{#unless domestic}}
+          <div>
+            {{#if isCreditNote}}
+              {{texts.taxPaysCustomerCreditNote}}
+            {{else}}
+              {{texts.taxPaysCustomerInvoice}}
+            {{/if}}
+          </div>
+        {{/unless}}
       {{/unless}}
       {{#if note}}<div id="freeNote">{{note}}</div>{{/if}}
 		</div>
@@ -318,10 +320,43 @@ handlebars.registerHelper('formatPrice', (value, currency) => priceFormatters[cu
 
 const domesticCountries = ['The United States of America', 'United Kingdom']
 
+const europeanUnionCountries = [
+  'Austria',
+  'Belgium',
+  'Bulgaria',
+  'Cyprus',
+  'Czech Republic',
+  'Germany',
+  'Denmark',
+  'Estonia',
+  'Spain',
+  'Finland',
+  'France',
+  'Greece',
+  'Hungary',
+  'Croatia',
+  'Ireland, Republic',
+  'Italy',
+  'Lithuania',
+  'Luxembourg',
+  'Latvia',
+  'Malta',
+  'Netherlands',
+  'Poland',
+  'Portugal',
+  'Romania',
+  'Sweden',
+  'Slovenia',
+  'Slovakia',
+]
+
 export const isDomestic = (vendorCountry, clientCountry) =>
   vendorCountry === clientCountry ||
   domesticCountries.includes(clientCountry) ||
   clientCountry.includes('US')
+
+export const isFromEU = (clientCountry) =>
+  europeanUnionCountries.includes(clientCountry)
 
 export default function renderInvoice(_context, language) {
   const context = {..._context}
@@ -330,6 +365,8 @@ export default function renderInvoice(_context, language) {
   context.clientIsCzech = context.clientCountry === 'Czech Republic'
 
   context.domestic = isDomestic(context.vendorCountry, context.clientCountry)
+
+  context.isFromEuropeanUnion = isFromEU(context.clientCountry)
 
   if (context.vendorID && context.vendorID.startsWith('@@')) {
     context.vendorID = null
