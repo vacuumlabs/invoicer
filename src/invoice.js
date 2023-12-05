@@ -316,7 +316,7 @@ const priceFormatters = {
 
 handlebars.registerHelper('formatPrice', (value, currency) => priceFormatters[currency].format(value))
 
-const domesticCountries = ['The United States of America', 'United Kingdom']
+const domesticCountries = ['The United States of America', 'United Kingdom', 'Gibraltar']
 
 export const isDomestic = (vendorCountry, clientCountry) =>
   vendorCountry === clientCountry ||
