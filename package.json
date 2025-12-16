@@ -26,7 +26,7 @@
     "ngrok": "^4.3.0"
   },
   "dependencies": {
-    "@slack/bolt": "^3.8.1",
+    "@slack/bolt": "^3.13.1",
     "content-disposition": "^0.5.4",
     "csv-parse": "4.16.3",
     "express": "^4.17.3",
