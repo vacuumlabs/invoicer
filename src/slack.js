@@ -205,10 +205,10 @@ async function sendPdf(htmlInvoice, invoice, bot) {
 async function sendXML(invoices, title, name, bot) {
   const filename = `${name}.xml`
 
-  await boltApp.client.files.upload({
+  await boltApp.client.files.uploadV2({
     title: `${title}.xml`,
     filename,
-    channels: bot.channel,
+    channel_id: bot.channel,
     initial_comment: 'Pohoda XML import',
     content: renderXML({invoices}),
   })
