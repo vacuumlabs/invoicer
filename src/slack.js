@@ -3,14 +3,15 @@ import logger from 'winston'
 import _request from 'request-promise'
 import {csv2invoices} from './csv2invoices'
 import querystring from 'querystring'
-import renderInvoice from './invoice'
-import pdf from 'html-pdf'
+import {createPdf} from './invoice'
+import puppeteer from 'puppeteer'
 import {routes as r, store} from './routes'
 import renderXML from './invoices2PohodaXML'
 import {saveInvoice} from './storage'
 import {App, ExpressReceiver} from '@slack/bolt'
 import {ACTION_ID_SEND_EN, ACTION_ID_SEND_SK, getSectionBlock, sendInvoicesButton, cancelButton, getButton, ACTION_ID_VL_BOT, ACTION_ID_WINCENT_BOT, getActionsBlock, HOME_BLOCKS} from './slackBlocks'
 import {BLOCK_ID_HOME} from './constants'
+import {Readable} from 'stream'
 
 const currencyFormat = Intl.NumberFormat('sk-SK', {minimumFractionDigits: 2, maximumFractionDigits: 2})
 
@@ -183,25 +184,6 @@ async function handleInvoicesAction(action, bot, botPendingInvoice, respond) {
   }
 }
 
-async function sendPdf(htmlInvoice, invoice, bot) {
-  const stream = await new Promise((resolve, reject) => {
-    pdf
-      .create(htmlInvoice, {format: 'A4'})
-      .toStream((err, stream) => {
-        if (err) {
-          logger.warn('PDF conversion failed')
-          return reject(err)
-        }
-
-        return resolve(stream)
-      })
-  })
-
-  const fileData = await saveInvoice(invoice, stream, bot.storage)
-
-  return fileData
-}
-
 async function sendXML(invoices, title, name, bot) {
   const filename = `${name}.xml`
 
@@ -214,9 +196,9 @@ async function sendXML(invoices, title, name, bot) {
   })
 }
 
-async function sendInvoiceToUser(invoice, comment, language, bot, isWincent) {
-  const htmlInvoice = renderInvoice(invoice, language)
-  const fileData = await sendPdf(htmlInvoice, invoice, bot)
+async function sendInvoiceToUser(pdfInvoice, invoice, comment, bot, isWincent) {
+  const stream = Readable.from(pdfInvoice)
+  const fileData = await saveInvoice(invoice, stream, bot.storage)
 
   await boltApp.client.chat.postMessage({
     token: isWincent ? c.slack.botToken.wincent : undefined,
@@ -226,20 +208,30 @@ async function sendInvoiceToUser(invoice, comment, language, bot, isWincent) {
 }
 
 async function sendInvoices(invoices, comment, language, bot, isWincent, respond) {
+  let browser
   let failMessage = 'I was unable to deliver the invoice to users:\n'
   let ts = null
   let count = 0
-  for (const i of invoices) {
-    try {
-      await sendInvoiceToUser(i, comment, language, bot, isWincent)
-      count++
-    } catch (err)  {
-      logger.warn('Failed to send invoice', err)
-      if (!ts) ts = (await showError(bot.channel, failMessage)).ts
-      failMessage += `${i.user}\n`
-      await showError(bot.channel, failMessage, ts)
+  try {
+    browser = await puppeteer.launch()
+    for (const i of invoices) {
+      try {
+        const pdfInvoice = await createPdf(browser, i, language)
+        await sendInvoiceToUser(pdfInvoice, i, comment, bot, isWincent)
+        count++
+      } catch (err) {
+        logger.warn('Failed to send invoice', err)
+        if (!ts) ts = (await showError(bot.channel, failMessage)).ts
+        failMessage += `${i.user}\n`
+        await showError(bot.channel, failMessage, ts)
+      }
     }
+  } catch (error) {
+    logger.warn('Failed to launch puppeteer', error)
+  } finally {
+    if (browser) await browser.close()
   }
+
   await respond(`:white_check_mark: Successfully uploaded and delivered ${count} invoices.`)
 }
 
