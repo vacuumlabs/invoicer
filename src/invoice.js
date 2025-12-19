@@ -378,7 +378,7 @@ export async function invoiceHandler(req, res) {
 
   let browser
   try {
-    browser = await puppeteer.launch()
+    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
     const pdfBuffer = await createPdf(browser, invoiceData, req.query.lang)
 
     const fileName = getInvoiceFileName(invoiceData)

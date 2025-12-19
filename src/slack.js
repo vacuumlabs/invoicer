@@ -213,7 +213,7 @@ async function sendInvoices(invoices, comment, language, bot, isWincent, respond
   let ts = null
   let count = 0
   try {
-    browser = await puppeteer.launch()
+    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
     for (const i of invoices) {
       try {
         const pdfInvoice = await createPdf(browser, i, language)
