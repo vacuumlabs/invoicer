@@ -197,7 +197,7 @@ async function sendXML(invoices, title, name, bot) {
 }
 
 async function sendInvoiceToUser(pdfInvoice, invoice, comment, bot, isWincent) {
-  const stream = Readable.from(pdfInvoice)
+  const stream = Readable.from([pdfInvoice])
   const fileData = await saveInvoice(invoice, stream, bot.storage)
 
   await boltApp.client.chat.postMessage({
