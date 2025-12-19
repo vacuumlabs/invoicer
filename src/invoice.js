@@ -3,7 +3,7 @@ import handlebarsIntl from 'handlebars-intl'
 import {shortNames} from './routes'
 import contentDisposition from 'content-disposition'
 import logger from 'winston'
-import pdf from 'html-pdf'
+import puppeteer from 'puppeteer'
 
 handlebarsIntl.registerWith(handlebars)
 
@@ -359,15 +359,36 @@ export function query2invoice(query) {
   return invoice
 }
 
-export function invoiceHandler(req, res) {
+export async function createPdf(browser, invoice, language) {
+  try {
+    const htmlInvoice = renderInvoice(invoice, language)
+
+    const page = await browser.newPage()
+    await page.setContent(htmlInvoice, {waitUntil: 'networkidle0'})
+    const pdfBuffer = await page.pdf({format: 'A4'})
+    return pdfBuffer
+  } catch (err) {
+    logger.warn('PDF conversion failed')
+    throw err
+  }
+}
+
+export async function invoiceHandler(req, res) {
   const invoiceData = query2invoice(req.query)
-  const htmlInvoice = renderInvoice(invoiceData, req.query.lang)
-  pdf
-    .create(htmlInvoice, {format: 'A4'})
-    .toBuffer((err, buffer) => {
-      if (err) logger.warn('PDF conversion failed')
-      const fileName = getInvoiceFileName(invoiceData)
-      res.setHeader('Content-Disposition', contentDisposition(fileName))
-      res.status(200).send(buffer)
-    })
+
+  let browser
+  try {
+    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']})
+    const pdfBuffer = await createPdf(browser, invoiceData, req.query.lang)
+
+    const fileName = getInvoiceFileName(invoiceData)
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', contentDisposition(fileName))
+    res.status(200).end(pdfBuffer)
+  } catch (error) {
+    logger.warn('Failed to render invoice', error)
+    res.status(500).end()
+  } finally {
+    if (browser) await browser.close()
+  }
 }
